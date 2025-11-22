@@ -4,7 +4,7 @@ import Propietario from '../models/Propietario';
 
 export const crearPropiedad = async (req: Request, res: Response) => {
   try {
-    const { direccion, precio, tipo, descripcion, propietarioId } = req.body;
+    const { direccion, precio, tipo, descripcion, propietarioId, area, areaConstruida } = req.body;
 
     // Verificar que el propietario exista
     const propietario = await Propietario.findByPk(propietarioId);
@@ -17,7 +17,9 @@ export const crearPropiedad = async (req: Request, res: Response) => {
       precio,
       tipo,
       descripcion,
-      propietarioId
+      propietarioId,
+      area,
+      areaConstruida
     });
 
     res.status(201).json({ message: 'Propiedad creada', data: nuevaPropiedad });

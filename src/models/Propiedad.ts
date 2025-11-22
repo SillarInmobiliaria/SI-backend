@@ -15,18 +15,26 @@ Propiedad.init(
       allowNull: false,
     },
     precio: {
-      type: DataTypes.DECIMAL(10, 2), // Permite precios con centavos
+      type: DataTypes.DECIMAL(10, 2),
       allowNull: false,
     },
     tipo: {
-      type: DataTypes.STRING, // "Venta" o "Alquiler"
+      type: DataTypes.STRING,
       allowNull: false,
     },
     descripcion: {
-      type: DataTypes.TEXT, // Texto largo
+      type: DataTypes.TEXT,
       allowNull: true,
     },
-
+    area: {
+      type: DataTypes.DECIMAL(10, 2),
+      allowNull: false,
+      defaultValue: 0,
+    },
+    areaConstruida: {
+      type: DataTypes.DECIMAL(10, 2),
+      allowNull: true,
+    },
     propietarioId: {
       type: DataTypes.UUID,
       allowNull: false,
