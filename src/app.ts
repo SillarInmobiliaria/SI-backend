@@ -36,6 +36,8 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+app.use('/uploads', express.static('uploads'));
+
 // --- RELACIONES ---
 
 // 1. Propietario <-> Propiedad
@@ -63,6 +65,7 @@ Propiedad.hasMany(Visita, { foreignKey: 'propiedadId' });
 // Relación Seguimiento
 Seguimiento.belongsTo(Cliente, { foreignKey: 'clienteId' });
 Seguimiento.belongsTo(Propiedad, { foreignKey: 'propiedadId' });
+
 // -------------------
 
 // Usar Rutas

@@ -14,12 +14,17 @@ Propiedad.init(
       type: DataTypes.STRING,
       allowNull: false,
     },
+    ubicacion: {
+      type: DataTypes.STRING,
+      allowNull: false,
+      defaultValue: 'Arequipa',
+    },
     precio: {
       type: DataTypes.DECIMAL(10, 2),
       allowNull: false,
     },
     moneda: {
-      type: DataTypes.STRING, // "USD" o "PEN"
+      type: DataTypes.STRING,
       defaultValue: 'USD',
       allowNull: false,
     },
@@ -28,7 +33,7 @@ Propiedad.init(
       allowNull: false,
     },
     modalidad: {
-      type: DataTypes.STRING, // "Venta" o "Alquiler"
+      type: DataTypes.STRING,
       defaultValue: 'Venta',
       allowNull: false,
     },
@@ -36,20 +41,59 @@ Propiedad.init(
       type: DataTypes.TEXT,
       allowNull: true,
     },
-    // 👇 Campos de Área (con valor por defecto 0 para evitar errores)
     area: {
       type: DataTypes.DECIMAL(10, 2),
       allowNull: false,
-      defaultValue: 0, 
+      defaultValue: 0,
     },
     areaConstruida: {
       type: DataTypes.DECIMAL(10, 2),
       allowNull: true,
       defaultValue: 0,
     },
+    habitaciones: {
+      type: DataTypes.INTEGER,
+      defaultValue: 0,
+    },
+    banos: {
+      type: DataTypes.INTEGER,
+      defaultValue: 0,
+    },
+    cocheras: {
+      type: DataTypes.INTEGER,
+      defaultValue: 0,
+    },
+    mapaUrl: {
+      type: DataTypes.TEXT, // TEXT porque los iframes son largos
+      allowNull: true,
+    },
+    videoUrl: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
     propietarioId: {
       type: DataTypes.UUID,
       allowNull: false,
+    },
+    distribucion: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+    },
+    fotoPrincipal: {
+      type: DataTypes.STRING,
+      allowNull: true, // Guardaremos la ruta ej: "uploads/foto1.jpg"
+    },
+    galeria: {
+      type: DataTypes.JSON, // Guardaremos un array: ["uploads/f2.jpg", "uploads/f3.jpg"]
+      allowNull: true,
+    },
+    pdfUrl: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    asesor: {
+      type: DataTypes.STRING,
+      allowNull: true,
     },
   },
   {
