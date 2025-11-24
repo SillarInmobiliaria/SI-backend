@@ -4,7 +4,7 @@ import { v4 as uuidv4 } from 'uuid';
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, 'uploads/'); // Carpeta donde se guardarán
+    cb(null, 'uploads/');
   },
   filename: (req, file, cb) => {
     // Generamos un nombre único: "uuid-nombreOriginal.jpg"

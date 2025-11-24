@@ -64,7 +64,7 @@ Propiedad.init(
       defaultValue: 0,
     },
     mapaUrl: {
-      type: DataTypes.TEXT, // TEXT porque los iframes son largos
+      type: DataTypes.TEXT,
       allowNull: true,
     },
     videoUrl: {
@@ -81,10 +81,10 @@ Propiedad.init(
     },
     fotoPrincipal: {
       type: DataTypes.STRING,
-      allowNull: true, // Guardaremos la ruta ej: "uploads/foto1.jpg"
+      allowNull: true,
     },
     galeria: {
-      type: DataTypes.JSON, // Guardaremos un array: ["uploads/f2.jpg", "uploads/f3.jpg"]
+      type: DataTypes.JSON,
       allowNull: true,
     },
     pdfUrl: {
