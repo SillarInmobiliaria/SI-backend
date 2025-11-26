@@ -15,7 +15,7 @@ Propietario.init(
       allowNull: false,
     },
     dni: {
-      type: DataTypes.STRING(8),
+      type: DataTypes.STRING,
       allowNull: false,
       unique: true,
     },
@@ -26,6 +26,30 @@ Propietario.init(
     direccion: {
       type: DataTypes.STRING,
       allowNull: false,
+    },
+    email: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    celular1: {
+      type: DataTypes.STRING,
+      allowNull: false, // Obligatorio
+    },
+    celular2: {
+      type: DataTypes.STRING,
+      allowNull: true, // Opcional
+    },
+    asesor: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    fechaAlta: {
+      type: DataTypes.DATEONLY,
+      defaultValue: DataTypes.NOW,
+    },
+    detalles: {
+      type: DataTypes.TEXT,
+      allowNull: true,
     },
     banco: {
       type: DataTypes.STRING,
@@ -39,15 +63,11 @@ Propietario.init(
       type: DataTypes.STRING,
       allowNull: true,
     },
-    email: { // También es útil tener el correo del dueño
-      type: DataTypes.STRING,
-      allowNull: true,
-    }
   },
   {
     sequelize: db,
     modelName: 'Propietario',
-    tableName: 'propietarios', // Así se llamará en Postgres
+    tableName: 'propietarios',
   }
 );
 
