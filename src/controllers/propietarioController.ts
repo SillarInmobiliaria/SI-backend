@@ -4,14 +4,18 @@ import Propietario from '../models/Propietario';
 export const crearPropietario = async (req: Request, res: Response) => {
   try {
     // 1. Recibimos los datos del Postman/Frontend
-    const { nombre, dni, fechaNacimiento, direccion } = req.body;
+    const { nombre, dni, fechaNacimiento, direccion, banco, cuenta, cci, email } = req.body;
 
     // 2. Creamos el registro en la BD
     const nuevoPropietario = await Propietario.create({
       nombre,
       dni,
       fechaNacimiento,
-      direccion
+      direccion,
+      banco,
+      cuenta,
+      cci,
+      email
     });
 
     // 3. Respondemos con el dato creado

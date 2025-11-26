@@ -17,16 +17,32 @@ Propietario.init(
     dni: {
       type: DataTypes.STRING(8),
       allowNull: false,
-      unique: true, // No puede haber dos propietarios con el mismo DNI
+      unique: true,
     },
     fechaNacimiento: {
-      type: DataTypes.DATEONLY, // Solo nos interesa la fecha
+      type: DataTypes.DATEONLY,
       allowNull: false,
     },
     direccion: {
       type: DataTypes.STRING,
       allowNull: false,
     },
+    banco: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    cuenta: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    cci: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    email: { // También es útil tener el correo del dueño
+      type: DataTypes.STRING,
+      allowNull: true,
+    }
   },
   {
     sequelize: db,
