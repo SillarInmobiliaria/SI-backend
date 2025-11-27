@@ -17,24 +17,17 @@ Propiedad.init(
     ubicacion: {
       type: DataTypes.STRING,
       allowNull: false,
-      defaultValue: 'Arequipa',
     },
     precio: {
       type: DataTypes.DECIMAL(10, 2),
       allowNull: false,
     },
-    moneda: {
-      type: DataTypes.STRING,
-      defaultValue: 'USD',
-      allowNull: false,
-    },
-    tipo: {
+    tipo: { // Casa, Depa, Terreno...
       type: DataTypes.STRING,
       allowNull: false,
     },
     modalidad: {
       type: DataTypes.STRING,
-      defaultValue: 'Venta',
       allowNull: false,
     },
     descripcion: {
@@ -43,12 +36,10 @@ Propiedad.init(
     },
     area: {
       type: DataTypes.DECIMAL(10, 2),
-      allowNull: false,
       defaultValue: 0,
     },
     areaConstruida: {
       type: DataTypes.DECIMAL(10, 2),
-      allowNull: true,
       defaultValue: 0,
     },
     habitaciones: {
@@ -63,20 +54,24 @@ Propiedad.init(
       type: DataTypes.INTEGER,
       defaultValue: 0,
     },
+    propietarioId: {
+      type: DataTypes.UUID,
+      allowNull: true,
+    },
+    distribucion: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+    },
+    asesor: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
     mapaUrl: {
       type: DataTypes.TEXT,
       allowNull: true,
     },
     videoUrl: {
       type: DataTypes.STRING,
-      allowNull: true,
-    },
-    propietarioId: {
-      type: DataTypes.UUID,
-      allowNull: false,
-    },
-    distribucion: {
-      type: DataTypes.TEXT,
       allowNull: true,
     },
     fotoPrincipal: {
@@ -91,8 +86,60 @@ Propiedad.init(
       type: DataTypes.STRING,
       allowNull: true,
     },
-    asesor: {
+    fechaCaptacion: {
+      type: DataTypes.DATEONLY,
+      defaultValue: DataTypes.NOW,
+    },
+    comision: {
+      type: DataTypes.STRING, // Ej: "5%" o "Un mes de arriendo"
+      allowNull: true,
+    },
+    tipoContrato: {
+      type: DataTypes.STRING, // "Exclusiva" o "Sin Exclusiva"
+      allowNull: true,
+    },
+    partidaRegistral: {
+      type: DataTypes.STRING(10), // Máximo 10 caracteres
+      allowNull: true,
+    },
+    numeroPartida: {
       type: DataTypes.STRING,
+      allowNull: true,
+    },
+    fechaInicioContrato: {
+      type: DataTypes.DATEONLY,
+      allowNull: true,
+    },
+    fechaVencimientoContrato: {
+      type: DataTypes.DATEONLY,
+      allowNull: true,
+    },
+    testimonio: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: false,
+    },
+    hr: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: false,
+    },
+    pu: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: false,
+    },
+    impuestoPredial: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: false,
+    },
+    arbitrios: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: false,
+    },
+    copiaLiteral: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: false,
+    },
+    plataforma: {
+      type: DataTypes.JSON, 
       allowNull: true,
     },
   },

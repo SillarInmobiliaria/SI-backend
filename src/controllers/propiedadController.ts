@@ -4,23 +4,26 @@ import Propietario from '../models/Propietario';
 
 export const crearPropiedad = async (req: Request, res: Response) => {
   try {
-    // Los datos de texto vienen en req.body
-    // Los archivos vienen en req.files
     const files = req.files as { [fieldname: string]: Express.Multer.File[] };
     
-    // Obtener las rutas de los archivos subidos
     const fotoPrincipal = files['fotoPrincipal'] ? files['fotoPrincipal'][0].path : null;
     const pdfUrl = files['pdf'] ? files['pdf'][0].path : null;
-    
-    // Para la galería, mapeamos todos los archivos a sus rutas
     const galeria = files['galeria'] ? files['galeria'].map(f => f.path) : [];
 
+    // Crear la propiedad
     const nuevaPropiedad = await Propiedad.create({
       ...req.body,
       fotoPrincipal,
       galeria,
       pdfUrl
     });
+
+    if (req.body.propietarios) {
+      const propietariosIds = JSON.parse(req.body.propietarios);
+      if (Array.isArray(propietariosIds)) {
+        await (nuevaPropiedad as any).setPropietarios(propietariosIds);
+      }
+    }
 
     res.status(201).json({ message: 'Propiedad creada', data: nuevaPropiedad });
   } catch (error: any) {
@@ -31,7 +34,12 @@ export const crearPropiedad = async (req: Request, res: Response) => {
 
 export const obtenerPropiedades = async (req: Request, res: Response) => {
   try {
-    const propiedades = await Propiedad.findAll({ include: Propietario });
+    // Incluir la lista de Propietarios asociados
+    const propiedades = await Propiedad.findAll({ 
+      include: [
+        { model: Propietario } 
+      ] 
+    });
     res.json(propiedades);
   } catch (error) {
     res.status(500).json({ message: 'Error al obtener propiedades' });
