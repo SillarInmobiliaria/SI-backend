@@ -31,9 +31,25 @@ Cliente.init(
       type: DataTypes.STRING,
       allowNull: true,
     },
-    telefono: {
+    telefono1: {
+      type: DataTypes.STRING,
+      allowNull: false, // Obligatorio
+    },
+    telefono2: {
+      type: DataTypes.STRING,
+      allowNull: true, // Opcional
+    },
+    estadoCivil: {
       type: DataTypes.STRING,
       allowNull: true,
+    },
+    ocupacion: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    fechaAlta: {
+      type: DataTypes.DATEONLY,
+      defaultValue: DataTypes.NOW,
     },
   },
   {
