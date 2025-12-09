@@ -15,7 +15,7 @@ Propietario.init(
       allowNull: false,
     },
     dni: {
-      type: DataTypes.STRING(8), // Limitado a 8 en BD
+      type: DataTypes.STRING(8),
       allowNull: false,
       unique: true,
     },
@@ -32,8 +32,8 @@ Propietario.init(
       allowNull: true,
     },
     celular1: {
-      type: DataTypes.STRING(9), // Limitado a 9 en BD
-      allowNull: false, 
+      type: DataTypes.STRING(9),
+      allowNull: false,
     },
     celular2: {
       type: DataTypes.STRING(9),

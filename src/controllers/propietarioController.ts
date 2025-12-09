@@ -14,7 +14,6 @@ export const getPropietarios = async (req: Request, res: Response) => {
 // Crear un nuevo propietario
 export const createPropietario = async (req: Request, res: Response) => {
   try {
-    // 👇 SOLUCIÓN: Pasamos req.body completo o desestructuramos TODO
     const { 
       nombre, dni, fechaNacimiento, direccion, email, 
       celular1, celular2, asesor, fechaAlta, detalles, 
