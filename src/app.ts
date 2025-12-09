@@ -89,7 +89,6 @@ const startServer = async () => {
     await db.authenticate();
     console.log('✅ Conexión a la base de datos exitosa.');
     
-    // alter: true actualizará cualquier cambio en las tablas
     await db.sync({ alter: true });
     console.log('✅ Todas las tablas sincronizadas correctamente.');
 

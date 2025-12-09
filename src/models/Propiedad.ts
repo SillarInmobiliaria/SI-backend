@@ -73,7 +73,7 @@ Propiedad.init(
     },
     propietarioId: {
       type: DataTypes.UUID,
-      allowNull: false,
+      allowNull: true,
     },
     distribucion: {
       type: DataTypes.TEXT,

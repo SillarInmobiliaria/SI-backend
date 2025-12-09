@@ -15,23 +15,59 @@ Propietario.init(
       allowNull: false,
     },
     dni: {
-      type: DataTypes.STRING(8),
+      type: DataTypes.STRING(8), // Limitado a 8 en BD
       allowNull: false,
-      unique: true, // No puede haber dos propietarios con el mismo DNI
+      unique: true,
     },
     fechaNacimiento: {
-      type: DataTypes.DATEONLY, // Solo nos interesa la fecha
+      type: DataTypes.DATEONLY,
       allowNull: false,
     },
     direccion: {
       type: DataTypes.STRING,
-      allowNull: false,
+      allowNull: true,
+    },
+    email: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    celular1: {
+      type: DataTypes.STRING(9), // Limitado a 9 en BD
+      allowNull: false, 
+    },
+    celular2: {
+      type: DataTypes.STRING(9),
+      allowNull: true,
+    },
+    asesor: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    fechaAlta: {
+      type: DataTypes.DATEONLY,
+      allowNull: true,
+    },
+    detalles: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+    },
+    banco: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    cuenta: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    cci: {
+      type: DataTypes.STRING,
+      allowNull: true,
     },
   },
   {
     sequelize: db,
     modelName: 'Propietario',
-    tableName: 'propietarios', // Así se llamará en Postgres
+    tableName: 'propietarios',
   }
 );
 

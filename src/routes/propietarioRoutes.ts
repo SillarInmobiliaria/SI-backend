@@ -1,12 +1,12 @@
 import { Router } from 'express';
-import { crearPropietario, obtenerPropietarios } from '../controllers/propietarioController';
+import { createPropietario, getPropietarios } from '../controllers/propietarioController';
 
 const router = Router();
 
-// POST http://localhost:4000/api/propietarios
-router.post('/', crearPropietario);
+// Obtener todos los propietarios
+router.get('/', getPropietarios);
 
-// GET http://localhost:4000/api/propietarios
-router.get('/', obtenerPropietarios);
+// Crear un nuevo propietario
+router.post('/', createPropietario);
 
 export default router;
