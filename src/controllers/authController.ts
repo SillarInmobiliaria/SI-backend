@@ -1,63 +1,102 @@
 import { Request, Response } from 'express';
 import Usuario from '../models/Usuario';
-import jwt from 'jsonwebtoken'; // Para crear el "pase" de entrada
+import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
 
-// Clave secreta para firmar los tokens (idealmente iría en .env)
-const JWT_SECRET = process.env.JWT_SECRET || 'palabra_secreta_super_segura';
+// Clave secreta para el token (Debería ir en .env, pero por ahora hardcodeada para desarrollo)
+const JWT_SECRET = process.env.JWT_SECRET || 'sillar_secreto_super_seguro';
 
-export const registro = async (req: Request, res: Response) => {
-  try {
-    const { nombre, email, password } = req.body;
-
-    // Verificar si ya existe
-    const existe = await Usuario.findOne({ where: { email } });
-    if (existe) {
-      return res.status(400).json({ message: 'El usuario ya existe' });
-    }
-
-    // Crear usuario (el modelo encripta la password solo)
-    const usuario = await Usuario.create({ nombre, email, password });
-
-    res.status(201).json({ message: 'Usuario registrado correctamente', usuarioId: usuario.getDataValue('id') });
-  } catch (error: any) {
-    res.status(500).json({ message: 'Error al registrar', error: error.message });
-  }
-};
-
-export const login = async (req: Request, res: Response) => {
+// --- LOGIN ---
+export const login = async (req: Request, res: Response): Promise<void> => {
   try {
     const { email, password } = req.body;
 
     // 1. Buscar usuario
     const usuario = await Usuario.findOne({ where: { email } });
     if (!usuario) {
-      return res.status(404).json({ message: 'Usuario no encontrado' });
+      res.status(404).json({ message: 'Usuario no encontrado' });
+      return;
     }
 
-    // 2. Verificar contraseña
-    // @ts-ignore
-    const esCorrecta = await usuario.compararPassword(password);
-    if (!esCorrecta) {
-      return res.status(401).json({ message: 'Contraseña incorrecta' });
+    // 2. Verificar si está activo
+    // @ts-ignore (Si TypeScript se queja del campo activo)
+    if (usuario.activo === false) { 
+      res.status(403).json({ message: 'Usuario desactivado. Contacte al administrador.' });
+      return;
     }
 
-    // 3. Generar Token (El pase VIP)
+    // 3. Verificar contraseña
+    const esValida = await bcrypt.compare(password, usuario.password);
+    if (!esValida) {
+      res.status(401).json({ message: 'Contraseña incorrecta' });
+      return;
+    }
+
+    // 4. Generar Token (Dura 8 horas)
     const token = jwt.sign(
-      { id: usuario.getDataValue('id'), nombre: usuario.getDataValue('nombre') }, 
+      { id: usuario.id, rol: (usuario as any).rol }, 
       JWT_SECRET, 
-      { expiresIn: '1d' } // Dura 1 día
+      { expiresIn: '8h' }
     );
 
-    res.json({ 
-      message: 'Login exitoso', 
-      token, 
-      usuario: { 
-        nombre: usuario.getDataValue('nombre'), 
-        email: usuario.getDataValue('email') 
-      } 
+    // 5. Responder (Incluyendo la bandera mustChangePassword)
+    res.json({
+      message: 'Login exitoso',
+      token,
+      usuario: {
+        id: usuario.id,
+        nombre: usuario.nombre,
+        email: usuario.email,
+        rol: (usuario as any).rol,
+        // 👇 Esto le dice al Frontend si debe redirigir a "Cambiar Contraseña"
+        mustChangePassword: usuario.mustChangePassword 
+      }
     });
 
-  } catch (error: any) {
-    res.status(500).json({ message: 'Error en el login', error: error.message });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Error en el servidor' });
   }
 };
+
+// --- CAMBIAR CONTRASEÑA (Para cuando es temporal) ---
+export const cambiarPassword = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { userId, nuevaPassword } = req.body;
+
+    const usuario = await Usuario.findByPk(userId);
+    if (!usuario) {
+      res.status(404).json({ message: 'Usuario no encontrado' });
+      return;
+    }
+
+    // Actualizar contraseña (el hook beforeUpdate del modelo la encriptará automáticamente)
+    usuario.password = nuevaPassword;
+    usuario.mustChangePassword = false; // Ya no es temporal
+    await usuario.save();
+
+    res.json({ message: 'Contraseña actualizada correctamente. Por favor inicia sesión de nuevo.' });
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Error al cambiar contraseña' });
+  }
+};
+
+// --- REGISTRO DE ADMIN (Solo para crear el primer usuario CEO) ---
+export const registrarAdmin = async (req: Request, res: Response): Promise<void> => {
+    try {
+        const { nombre, email, password } = req.body;
+        // Creamos usuario con rol ADMIN y sin necesidad de cambio de pass inmediato
+        const usuario = await Usuario.create({
+            nombre,
+            email,
+            password,
+            rol: 'ADMIN',
+            mustChangePassword: false 
+        });
+        res.status(201).json({ message: 'Admin creado', usuario });
+    } catch (error) {
+        res.status(500).json({ message: 'Error creando admin', error });
+    }
+}

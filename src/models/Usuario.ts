@@ -1,11 +1,16 @@
 import { DataTypes, Model } from 'sequelize';
 import db from '../config/db';
-import bcrypt from 'bcryptjs'; // Para encriptar
+import bcrypt from 'bcryptjs';
 
 class Usuario extends Model {
-  // Método para verificar si la contraseña es correcta
+  public id!: string;
+  public password!: string;
+  public mustChangePassword!: boolean;
+  nombre: any;
+  email: any;
+  
+  // Método para verificar contraseña
   public async compararPassword(password: string): Promise<boolean> {
-    // @ts-ignore
     return await bcrypt.compare(password, this.password);
   }
 }
@@ -24,18 +29,27 @@ Usuario.init(
     email: {
       type: DataTypes.STRING,
       allowNull: false,
-      unique: true, // No puede haber dos correos iguales
+      unique: true,
       validate: {
-        isEmail: true,
+        isEmail: true
       }
     },
     password: {
       type: DataTypes.STRING,
       allowNull: false,
     },
-    rol: { // 'admin' o 'asesor'
-      type: DataTypes.STRING,
-      defaultValue: 'asesor',
+    rol: {
+      type: DataTypes.ENUM('ADMIN', 'ASESOR'), // ADMIN = CEO, ASESOR = Empleado
+      defaultValue: 'ASESOR',
+      allowNull: false,
+    },
+    mustChangePassword: { // ¿Debe cambiar la contraseña? (True para nuevos usuarios)
+      type: DataTypes.BOOLEAN,
+      defaultValue: true, 
+    },
+    activo: { // Para desactivar asesores sin borrarlos
+      type: DataTypes.BOOLEAN,
+      defaultValue: true,
     }
   },
   {
@@ -43,11 +57,16 @@ Usuario.init(
     modelName: 'Usuario',
     tableName: 'usuarios',
     hooks: {
-      // Antes de guardar, encriptamos la contraseña automáticamente
-      beforeCreate: async (usuario: any) => {
+      beforeCreate: async (usuario: Usuario) => {
         const salt = await bcrypt.genSalt(10);
         usuario.password = await bcrypt.hash(usuario.password, salt);
       },
+      beforeUpdate: async (usuario: Usuario) => {
+        if (usuario.changed('password')) {
+          const salt = await bcrypt.genSalt(10);
+          usuario.password = await bcrypt.hash(usuario.password, salt);
+        }
+      }
     }
   }
 );

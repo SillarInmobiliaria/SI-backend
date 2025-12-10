@@ -2,7 +2,7 @@
   "compilerOptions": {
     "target": "es2016",
     "module": "commonjs",
-    "rootDir": "./src",
+    "rootDir": ".",
     "moduleResolution": "node",
     "baseUrl": "./src",
     "paths": {
@@ -18,5 +18,6 @@
     "forceConsistentCasingInFileNames": true,
     "strict": true,
     "skipLibCheck": true
-  }
+  },
+  "include": ["src/**/*", "scripts/**/*"]
 }

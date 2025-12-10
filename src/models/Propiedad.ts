@@ -58,7 +58,6 @@ Propiedad.init(
       type: DataTypes.INTEGER,
       defaultValue: 0,
     },
-    // Este campo es opcional porque usamos N:M
     propietarioId: {
       type: DataTypes.UUID,
       allowNull: true,

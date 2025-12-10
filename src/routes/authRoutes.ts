@@ -1,10 +1,15 @@
 import { Router } from 'express';
-// Asegúrate de tener también el controlador creado (Paso 2)
-import { registro, login } from '../controllers/authController';
+import { login, cambiarPassword, registrarAdmin } from '../controllers/authController';
 
 const router = Router();
 
-router.post('/registro', registro);
+// POST: /api/auth/login
 router.post('/login', login);
+
+// POST: /api/auth/cambiar-password
+router.post('/cambiar-password', cambiarPassword);
+
+// POST: /api/auth/registro-admin (Solo para uso inicial o del CEO)
+router.post('/registro-admin', registrarAdmin);
 
 export default router;
