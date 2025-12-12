@@ -63,6 +63,10 @@ Propietario.init(
       type: DataTypes.STRING,
       allowNull: true,
     },
+    usuarioId: {
+    type: DataTypes.UUID,
+    allowNull: true,
+    }
   },
   {
     sequelize: db,

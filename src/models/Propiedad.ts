@@ -90,10 +90,20 @@ Propiedad.init(
       type: DataTypes.STRING,
       allowNull: true,
     },
+    
     partidaRegistral: {
-      type: DataTypes.STRING(10),
+      type: DataTypes.TEXT, 
+      allowNull: false, 
+    },
+    partidaEstacionamiento: {
+      type: DataTypes.STRING,
       allowNull: true,
     },
+    partidaDeposito: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+
     numeroPartida: {
       type: DataTypes.STRING,
       allowNull: true,
@@ -118,30 +128,23 @@ Propiedad.init(
       type: DataTypes.STRING,
       allowNull: true,
     },
-    testimonio: {
-      type: DataTypes.BOOLEAN,
-      defaultValue: false,
+    observaciones: {
+      type: DataTypes.JSON, 
+      defaultValue: {}
     },
-    hr: {
-      type: DataTypes.BOOLEAN,
-      defaultValue: false,
+    usuarioId: {
+      type: DataTypes.UUID,
+      allowNull: true,
     },
-    pu: {
-      type: DataTypes.BOOLEAN,
-      defaultValue: false,
-    },
-    impuestoPredial: {
-      type: DataTypes.BOOLEAN,
-      defaultValue: false,
-    },
-    arbitrios: {
-      type: DataTypes.BOOLEAN,
-      defaultValue: false,
-    },
-    copiaLiteral: {
-      type: DataTypes.BOOLEAN,
-      defaultValue: false,
-    },
+    
+    // --- Documentación ---
+    testimonio: { type: DataTypes.BOOLEAN, defaultValue: false },
+    hr: { type: DataTypes.BOOLEAN, defaultValue: false },
+    pu: { type: DataTypes.BOOLEAN, defaultValue: false },
+    impuestoPredial: { type: DataTypes.BOOLEAN, defaultValue: false },
+    arbitrios: { type: DataTypes.BOOLEAN, defaultValue: false },
+    copiaLiteral: { type: DataTypes.BOOLEAN, defaultValue: false },
+    
     plataforma: {
       type: DataTypes.JSON, 
       allowNull: true,

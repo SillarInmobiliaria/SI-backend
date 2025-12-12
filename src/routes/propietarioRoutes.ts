@@ -1,12 +1,11 @@
 import { Router } from 'express';
-import { createPropietario, getPropietarios } from '../controllers/propietarioController';
+import { crearPropietario, obtenerPropietarios } from '../controllers/propietarioController';
+import { authMiddleware } from '../middleware/authMiddleware';
 
 const router = Router();
 
-// Obtener todos los propietarios
-router.get('/', getPropietarios);
-
-// Crear un nuevo propietario
-router.post('/', createPropietario);
+// Protegemos las rutas
+router.post('/', authMiddleware, crearPropietario);
+router.get('/', authMiddleware, obtenerPropietarios);
 
 export default router;

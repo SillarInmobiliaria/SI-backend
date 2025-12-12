@@ -51,6 +51,10 @@ Cliente.init(
       type: DataTypes.DATEONLY,
       defaultValue: DataTypes.NOW,
     },
+    usuarioId: {
+    type: DataTypes.UUID, // O STRING, según uses en Usuario
+    allowNull: true, // Lo dejamos true por ahora para no romper datos viejos
+    }
   },
   {
     sequelize: db,

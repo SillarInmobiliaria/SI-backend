@@ -1,11 +1,19 @@
 import { Router } from 'express';
-import { crearUsuario, obtenerUsuarios } from '../controllers/usuarioController';
-import { verificarToken, esAdmin } from '../middleware/authMiddleware';
+import { 
+    createUsuario, 
+    getUsuarios, 
+    toggleEstadoUsuario, 
+    deleteUsuario,
+    getNotificaciones
+} from '../controllers/usuarioController';
+import { authMiddleware } from '../middleware/authMiddleware';
 
 const router = Router();
 
-// Rutas Protegidas (Solo Admins pueden ver y crear usuarios)
-router.get('/', verificarToken, esAdmin, obtenerUsuarios);
-router.post('/', verificarToken, esAdmin, crearUsuario);
+router.post('/', authMiddleware, createUsuario);
+router.get('/', authMiddleware, getUsuarios);
+router.put('/:id/estado', authMiddleware, toggleEstadoUsuario);
+router.delete('/:id', authMiddleware, deleteUsuario);
+router.get('/notificaciones', authMiddleware, getNotificaciones);
 
 export default router;

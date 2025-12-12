@@ -3,34 +3,25 @@ import jwt from 'jsonwebtoken';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'sillar_secreto_super_seguro';
 
-// Extender la interfaz Request para que acepte el usuario
-export interface AuthRequest extends Request {
-    usuario?: any;
-}
+export const authMiddleware = (req: Request, res: Response, next: NextFunction): void => {
+  // 1. Obtener el header Authorization
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1]; // "Bearer TOKEN"
 
-// 1. Verificar Token (¿Está logueado?)
-export const verificarToken = (req: AuthRequest, res: Response, next: NextFunction): void => {
-    const token = req.header('Authorization')?.replace('Bearer ', '');
+  if (!token) {
+    res.status(401).json({ message: 'Acceso denegado. No hay token.' });
+    return;
+  }
 
-    if (!token) {
-        res.status(401).json({ message: 'Acceso denegado. No hay token.' });
-        return;
-    }
-
-    try {
-        const verificado = jwt.verify(token, JWT_SECRET);
-        req.usuario = verificado;
-        next(); // Pasa al siguiente paso
-    } catch (error) {
-        res.status(400).json({ message: 'Token inválido o expirado.' });
-    }
-};
-
-// 2. Verificar Rol Admin (¿Es jefe?)
-export const esAdmin = (req: AuthRequest, res: Response, next: NextFunction): void => {
-    if (req.usuario && req.usuario.rol === 'ADMIN') {
-        next(); // Pasa, es jefe
-    } else {
-        res.status(403).json({ message: 'Acceso prohibido. Se requiere rol de ADMIN.' });
-    }
+  try {
+    // 2. Verificar el token
+    const decoded = jwt.verify(token, JWT_SECRET);
+    
+    // 3. Guardar datos del usuario en la request para usarlos luego
+    (req as any).user = decoded;
+    
+    next(); // Pasar al siguiente controlador
+  } catch (error) {
+    res.status(403).json({ message: 'Token inválido o expirado.' });
+  }
 };

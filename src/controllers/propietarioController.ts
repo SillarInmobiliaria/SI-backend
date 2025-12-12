@@ -1,44 +1,43 @@
 import { Request, Response } from 'express';
 import Propietario from '../models/Propietario';
 
-// Obtener todos los propietarios
-export const getPropietarios = async (req: Request, res: Response) => {
+// CREAR PROPIETARIO (Con marca de dueño)
+export const crearPropietario = async (req: Request, res: Response) => {
   try {
-    const propietarios = await Propietario.findAll();
-    res.json(propietarios);
+    const usuario = (req as any).user; // Obtenemos quién lo crea
+    
+    const nuevoPropietario = await Propietario.create({
+      ...req.body,
+      usuarioId: usuario.id
+    });
+    
+    res.status(201).json(nuevoPropietario);
   } catch (error) {
-    res.status(500).json({ message: 'Error al obtener propietarios' });
+    console.error(error);
+    res.status(500).json({ message: 'Error al crear propietario' });
   }
 };
 
-// Crear un nuevo propietario
-export const createPropietario = async (req: Request, res: Response) => {
+// OBTENER PROPIETARIOS (Con filtro de seguridad)
+export const obtenerPropietarios = async (req: Request, res: Response) => {
   try {
-    const { 
-      nombre, dni, fechaNacimiento, direccion, email, 
-      celular1, celular2, asesor, fechaAlta, detalles, 
-      banco, cuenta, cci 
-    } = req.body;
+    const usuario = (req as any).user;
+    let whereClause = {};
 
-    const nuevoPropietario = await Propietario.create({
-      nombre,
-      dni,
-      fechaNacimiento,
-      direccion,
-      email,
-      celular1,
-      celular2,
-      asesor,
-      fechaAlta,
-      detalles,
-      banco,
-      cuenta,
-      cci
+    // 🕵️‍♂️ SI NO ES ADMIN, FILTRAMOS
+    // Solo ve los propietarios que él mismo creó
+    if (usuario.rol !== 'ADMIN') {
+        whereClause = { usuarioId: usuario.id };
+    }
+
+    const propietarios = await Propietario.findAll({ 
+        where: whereClause,
+        order: [['createdAt', 'DESC']] 
     });
-
-    res.status(201).json({ message: 'Propietario creado', data: nuevoPropietario });
-  } catch (error: any) {
+    
+    res.json(propietarios);
+  } catch (error) {
     console.error(error);
-    res.status(500).json({ message: 'Error al crear propietario', error: error.message });
+    res.status(500).json({ message: 'Error al obtener propietarios' });
   }
 };
