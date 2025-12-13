@@ -61,11 +61,13 @@ Propiedad.init(
     arbitrios: { type: DataTypes.BOOLEAN, defaultValue: false },
     copiaLiteral: { type: DataTypes.BOOLEAN, defaultValue: false },
 
+    revision: { type: DataTypes.BOOLEAN, defaultValue: false },
+
     // --- GESTIÓN ---
     asesor: { type: DataTypes.STRING, allowNull: true }, // Nombre del asesor
     usuarioId: { type: DataTypes.UUID, allowNull: true }, // ID del asesor (Relación)
     activo: { type: DataTypes.BOOLEAN, defaultValue: true },
-    observaciones: { type: DataTypes.JSON, allowNull: true } // Para guardar notas del abogado
+    observaciones: { type: DataTypes.TEXT, allowNull: true } // Para guardar notas del abogado (texto libre)
   },
   {
     sequelize: db,
