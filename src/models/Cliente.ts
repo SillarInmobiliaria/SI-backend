@@ -15,7 +15,7 @@ Cliente.init(
       allowNull: false,
     },
     dni: {
-      type: DataTypes.STRING,
+      type: DataTypes.STRING(8),
       allowNull: false,
       unique: true,
     },
@@ -25,19 +25,19 @@ Cliente.init(
     },
     direccion: {
       type: DataTypes.STRING,
-      allowNull: false,
+      allowNull: true,
     },
     email: {
       type: DataTypes.STRING,
       allowNull: true,
     },
     telefono1: {
-      type: DataTypes.STRING,
-      allowNull: false, // Obligatorio
+      type: DataTypes.STRING(9),
+      allowNull: false,
     },
     telefono2: {
-      type: DataTypes.STRING,
-      allowNull: true, // Opcional
+      type: DataTypes.STRING(9),
+      allowNull: true,
     },
     estadoCivil: {
       type: DataTypes.STRING,
@@ -52,8 +52,12 @@ Cliente.init(
       defaultValue: DataTypes.NOW,
     },
     usuarioId: {
-    type: DataTypes.UUID, // O STRING, según uses en Usuario
-    allowNull: true, // Lo dejamos true por ahora para no romper datos viejos
+      type: DataTypes.UUID,
+      allowNull: true,
+    },
+    activo: { 
+      type: DataTypes.BOOLEAN, 
+      defaultValue: true 
     }
   },
   {

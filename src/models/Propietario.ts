@@ -15,9 +15,9 @@ Propietario.init(
       allowNull: false,
     },
     dni: {
-      type: DataTypes.STRING(8),
+      type: DataTypes.STRING(8), // Estricto: 8 caracteres
       allowNull: false,
-      unique: true,
+      unique: true, // ⚠️ Si intentas crear un DNI que ya existe, dará error
     },
     fechaNacimiento: {
       type: DataTypes.DATEONLY,
@@ -32,7 +32,7 @@ Propietario.init(
       allowNull: true,
     },
     celular1: {
-      type: DataTypes.STRING(9),
+      type: DataTypes.STRING(9), // Estricto: 9 caracteres
       allowNull: false,
     },
     celular2: {
@@ -46,6 +46,7 @@ Propietario.init(
     fechaAlta: {
       type: DataTypes.DATEONLY,
       allowNull: true,
+      defaultValue: DataTypes.NOW,
     },
     detalles: {
       type: DataTypes.TEXT,
@@ -64,8 +65,12 @@ Propietario.init(
       allowNull: true,
     },
     usuarioId: {
-    type: DataTypes.UUID,
-    allowNull: true,
+      type: DataTypes.UUID,
+      allowNull: true,
+    },
+    activo: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: true,
     }
   },
   {
