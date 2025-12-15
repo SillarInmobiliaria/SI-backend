@@ -3,81 +3,83 @@ import { Op } from 'sequelize';
 import ExcelJS from 'exceljs';
 import Propiedad from '../models/Propiedad';
 import Propietario from '../models/Propietario';
-import Usuario from '../models/Usuario'; // Asumo que tus clientes son Usuarios
+import Usuario from '../models/Usuario';
+import Visita from '../models/Visita'; // 👈 Importamos Visita
 
-// --- HELPERS DE FECHAS ---
-const getRangoHoy = () => {
-    const inicio = new Date();
-    inicio.setHours(0, 0, 0, 0);
-    const fin = new Date();
-    fin.setHours(23, 59, 59, 999);
+// --- HELPERS ---
+const getRangoAnio = (anio: number) => {
+    const inicio = new Date(anio, 0, 1);
+    const fin = new Date(anio, 11, 31, 23, 59, 59);
     return { inicio, fin };
 };
 
-const getRangoMesActual = () => {
-    const fecha = new Date();
-    const inicio = new Date(fecha.getFullYear(), fecha.getMonth(), 1);
-    const fin = new Date(fecha.getFullYear(), fecha.getMonth() + 1, 0); // Último día del mes
-    fin.setHours(23, 59, 59, 999);
-    return { inicio, fin };
-};
+// Función auxiliar mejorada para aceptar filtros extra
+async function getConteoPorMeses(Modelo: any, anio: number, extraWhere: any = {}) {
+    const datosMensuales = [];
+    
+    for (let mes = 0; mes < 12; mes++) {
+        const inicio = new Date(anio, mes, 1);
+        const fin = new Date(anio, mes + 1, 0, 23, 59, 59);
 
-const getRangoMesAnterior = () => {
-    const fecha = new Date();
-    const inicio = new Date(fecha.getFullYear(), fecha.getMonth() - 1, 1);
-    const fin = new Date(fecha.getFullYear(), fecha.getMonth(), 0); // Último día del mes anterior
-    fin.setHours(23, 59, 59, 999);
-    return { inicio, fin };
-};
-
-// --- LOGICA DE ESTADÍSTICAS ---
-async function calcularEstadisticas(Modelo: any) {
-    const hoy = getRangoHoy();
-    const esteMes = getRangoMesActual();
-    const mesAnterior = getRangoMesAnterior();
-
-    const countHoy = await Modelo.count({ 
-        where: { createdAt: { [Op.between]: [hoy.inicio, hoy.fin] } } 
-    });
-
-    const countEsteMes = await Modelo.count({ 
-        where: { createdAt: { [Op.between]: [esteMes.inicio, esteMes.fin] } } 
-    });
-
-    const countMesAnterior = await Modelo.count({ 
-        where: { createdAt: { [Op.between]: [mesAnterior.inicio, mesAnterior.fin] } } 
-    });
-
-    // Calcular crecimiento
-    let crecimiento = 0;
-    if (countMesAnterior > 0) {
-        crecimiento = ((countEsteMes - countMesAnterior) / countMesAnterior) * 100;
-    } else if (countEsteMes > 0) {
-        crecimiento = 100; // Si antes era 0 y ahora hay algo, creció 100% (o infinito)
+        const count = await Modelo.count({
+            where: { 
+                createdAt: { [Op.between]: [inicio, fin] },
+                ...extraWhere // 👈 Permite filtrar solo COMPLETADAS
+            }
+        });
+        datosMensuales.push(count);
     }
-
-    return {
-        hoy: countHoy,
-        esteMes: countEsteMes,
-        mesAnterior: countMesAnterior,
-        crecimiento: parseFloat(crecimiento.toFixed(1)) // Redondear a 1 decimal
-    };
+    return datosMensuales;
 }
 
-// 1. OBTENER DATOS PARA EL DASHBOARD (JSON)
+// 1. OBTENER ESTADÍSTICAS AVANZADAS
 export const getDashboardStats = async (req: Request, res: Response) => {
     try {
-        // Ejecutamos las consultas en paralelo para ser más rápidos
-        const [statsPropiedades, statsPropietarios, statsUsuarios] = await Promise.all([
-            calcularEstadisticas(Propiedad),
-            calcularEstadisticas(Propietario),
-            calcularEstadisticas(Usuario)
+        const yearQuery = req.query.year ? Number(req.query.year) : new Date().getFullYear();
+
+        // A. Totales Anuales
+        const rango = getRangoAnio(yearQuery);
+        const whereAnio = { createdAt: { [Op.between]: [rango.inicio, rango.fin] } };
+
+        const totalPropiedades = await Propiedad.count({ where: whereAnio });
+        const totalPropietarios = await Propietario.count({ where: whereAnio });
+        const totalClientes = await Usuario.count({ where: whereAnio });
+        
+        // Contamos solo las visitas REALIZADAS (COMPLETADA)
+        const totalVisitas = await Visita.count({ 
+            where: { 
+                ...whereAnio, 
+                estado: 'COMPLETADA' 
+            } 
+        });
+
+        // B. Datos para la Gráfica (Mes a Mes)
+        const [grafPropiedades, grafClientes, grafPropietarios, grafVisitas] = await Promise.all([
+            getConteoPorMeses(Propiedad, yearQuery),
+            getConteoPorMeses(Usuario, yearQuery),
+            getConteoPorMeses(Propietario, yearQuery),
+            getConteoPorMeses(Visita, yearQuery, { estado: 'COMPLETADA' }) // 👈 Filtramos visitas
         ]);
 
+        const meses = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+        
+        const datosGrafica = meses.map((mes, index) => ({
+            name: mes,
+            propiedades: grafPropiedades[index],
+            clientes: grafClientes[index],
+            propietarios: grafPropietarios[index],
+            visitas: grafVisitas[index] // 👈 Agregamos a la gráfica
+        }));
+
         res.json({
-            propiedades: statsPropiedades,
-            propietarios: statsPropietarios,
-            clientes: statsUsuarios
+            anio: yearQuery,
+            totales: {
+                propiedades: totalPropiedades,
+                propietarios: totalPropietarios,
+                clientes: totalClientes,
+                visitas: totalVisitas // 👈 Enviamos total
+            },
+            grafica: datosGrafica
         });
 
     } catch (error: any) {
@@ -86,86 +88,41 @@ export const getDashboardStats = async (req: Request, res: Response) => {
     }
 };
 
-// 2. EXPORTAR REPORTE EXCEL
+// 2. EXPORTAR REPORTE EXCEL GENERAL (DASHBOARD)
 export const exportarReporteExcel = async (req: Request, res: Response) => {
     try {
         const workbook = new ExcelJS.Workbook();
         workbook.creator = 'Sillar Inmobiliaria';
         workbook.created = new Date();
-
-        // --- HOJA 1: RESUMEN EJECUTIVO ---
-        const sheetResumen = workbook.addWorksheet('Resumen Ejecutivo');
         
-        // Estilos de columnas
-        sheetResumen.columns = [
-            { header: 'Concepto', key: 'concepto', width: 30 },
-            { header: 'Hoy', key: 'hoy', width: 15 },
-            { header: 'Este Mes', key: 'esteMes', width: 15 },
-            { header: 'Mes Anterior', key: 'mesAnterior', width: 15 },
-            { header: 'Crecimiento %', key: 'crecimiento', width: 15 },
-        ];
-
-        // Obtenemos datos
-        const statsPropiedades = await calcularEstadisticas(Propiedad);
-        const statsPropietarios = await calcularEstadisticas(Propietario);
-        const statsUsuarios = await calcularEstadisticas(Usuario);
-
-        // Agregamos filas
-        sheetResumen.addRow({
-            concepto: 'Propiedades Nuevas',
-            ...statsPropiedades,
-            crecimiento: statsPropiedades.crecimiento + '%'
-        });
-        sheetResumen.addRow({
-            concepto: 'Propietarios Registrados',
-            ...statsPropietarios,
-            crecimiento: statsPropietarios.crecimiento + '%'
-        });
-        sheetResumen.addRow({
-            concepto: 'Usuarios/Clientes Nuevos',
-            ...statsUsuarios,
-            crecimiento: statsUsuarios.crecimiento + '%'
-        });
-
-        // Estilizar encabezados
-        sheetResumen.getRow(1).font = { bold: true, color: { argb: 'FFFFFFFF' } };
-        sheetResumen.getRow(1).fill = {
-            type: 'pattern',
-            pattern: 'solid',
-            fgColor: { argb: 'FF000080' } // Azul oscuro
-        };
-
-        // --- HOJA 2: DETALLE PROPIEDADES MES ACTUAL ---
-        const sheetDetalle = workbook.addWorksheet('Detalle Mes Actual');
-        sheetDetalle.columns = [
-            { header: 'Fecha', key: 'fecha', width: 20 },
-            { header: 'Tipo', key: 'tipo', width: 15 },
+        const sheet = workbook.addWorksheet('Reporte General');
+        
+        sheet.columns = [
+            { header: 'Fecha Registro', key: 'fecha', width: 20 },
+            { header: 'Tipo Inmueble', key: 'tipo', width: 15 },
             { header: 'Ubicación', key: 'ubicacion', width: 25 },
             { header: 'Precio', key: 'precio', width: 15 },
             { header: 'Asesor', key: 'asesor', width: 20 },
         ];
 
-        const rangoMes = getRangoMesActual();
-        const propiedadesMes = await Propiedad.findAll({
-            where: { createdAt: { [Op.between]: [rangoMes.inicio, rangoMes.fin] } },
-            order: [['createdAt', 'DESC']]
+        const propiedades = await Propiedad.findAll({ 
+            order: [['createdAt', 'DESC']] 
         });
 
-        propiedadesMes.forEach(p => {
-            const data = p.toJSON();
-            sheetDetalle.addRow({
-                fecha: data.createdAt.toISOString().split('T')[0],
-                tipo: data.tipo,
-                ubicacion: data.ubicacion,
-                precio: `${data.moneda} ${data.precio}`,
-                asesor: data.asesor || 'N/A'
+        propiedades.forEach(p => {
+            const d = p.toJSON();
+            sheet.addRow({
+                fecha: d.createdAt ? new Date(d.createdAt).toISOString().split('T')[0] : '-',
+                tipo: d.tipo,
+                ubicacion: d.ubicacion,
+                precio: d.precio,
+                asesor: d.asesor || 'N/A'
             });
         });
 
-        // --- RESPUESTA DEL ARCHIVO ---
         res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-        res.setHeader('Content-Disposition', 'attachment; filename=' + 'Reporte_Sillar_' + Date.now() + '.xlsx');
-
+        res.setHeader('Content-Disposition', 'attachment; filename=Reporte_Sillar.xlsx');
+        
         await workbook.xlsx.write(res);
         res.end();
 

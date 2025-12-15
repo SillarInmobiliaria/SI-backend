@@ -4,9 +4,9 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 const db = new Sequelize(
-    process.env.DB_NAME || 'sillar_db',      // Nombre de tu base de datos
-    process.env.DB_USER || 'postgres',       // Tu usuario (usualmente postgres)
-    process.env.DB_PASS || 'admin1234',      // 👈 PON TU CONTRASEÑA DE PGADMIN AQUÍ
+    process.env.DB_NAME || 'sillar_db',
+    process.env.DB_USER || 'postgres',
+    process.env.DB_PASS || 'admin1234',
     {
         host: process.env.DB_HOST || 'localhost',
         dialect: 'postgres',

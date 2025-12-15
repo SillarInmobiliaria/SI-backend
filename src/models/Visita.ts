@@ -1,49 +1,65 @@
-import { DataTypes, Model } from 'sequelize';
+import { Model, DataTypes } from 'sequelize';
 import db from '../config/db';
+import Usuario from './Usuario';
+import Propiedad from './Propiedad';
+import Cliente from './Cliente'; // 👈 IMPORTANTE: Importar Cliente
 
-class Visita extends Model {}
+class Visita extends Model {
+    public id!: string;
+    public fechaProgramada!: Date;
+    public estado!: string;
+    public comentariosPrevios!: string;
+    public resultadoSeguimiento!: string;
+    
+    public clienteId!: string;
+    public propiedadId!: string;
+    public asesorId!: string;
+}
 
-Visita.init(
-  {
+Visita.init({
     id: {
-      type: DataTypes.UUID,
-      defaultValue: DataTypes.UUIDV4,
-      primaryKey: true,
+        type: DataTypes.UUID,
+        defaultValue: DataTypes.UUIDV4,
+        primaryKey: true
     },
-    asesor: {
-      type: DataTypes.STRING,
-      allowNull: false,
+    fechaProgramada: {
+        type: DataTypes.DATE,
+        allowNull: false
     },
-    fecha: {
-      type: DataTypes.DATEONLY,
-      allowNull: false,
+    estado: {
+        type: DataTypes.STRING, 
+        defaultValue: 'PENDIENTE'
     },
-    hora: {
-      type: DataTypes.TIME,
-      allowNull: false,
+    comentariosPrevios: {
+        type: DataTypes.TEXT,
+        allowNull: true
     },
-    resultado: {
-      type: DataTypes.STRING,
-      allowNull: false,
-    },
-    comentario: {
-      type: DataTypes.TEXT,
-      allowNull: true,
+    resultadoSeguimiento: {
+        type: DataTypes.TEXT,
+        allowNull: true
     },
     clienteId: {
-      type: DataTypes.UUID,
-      allowNull: false,
+        type: DataTypes.UUID,
+        allowNull: false
     },
     propiedadId: {
-      type: DataTypes.UUID,
-      allowNull: false,
+        type: DataTypes.UUID,
+        allowNull: false
     },
-  },
-  {
+    asesorId: {
+        type: DataTypes.UUID,
+        allowNull: false
+    }
+}, {
     sequelize: db,
-    modelName: 'Visita',
     tableName: 'visitas',
-  }
-);
+    timestamps: true
+});
+
+// --- CORRECCIÓN DE RELACIONES ---
+// El cliente es un Cliente, no un Usuario
+Visita.belongsTo(Cliente, { foreignKey: 'clienteId', as: 'cliente' }); 
+Visita.belongsTo(Usuario, { foreignKey: 'asesorId', as: 'asesor' });
+Visita.belongsTo(Propiedad, { foreignKey: 'propiedadId', as: 'propiedad' });
 
 export default Visita;
