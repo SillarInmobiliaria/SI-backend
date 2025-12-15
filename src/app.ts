@@ -3,6 +3,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import db from './config/db';
 import bcrypt from 'bcryptjs'; 
+import dashboardRoutes from './routes/dashboardRoutes';
 
 // Importar Modelos
 import './models/Propietario'; 
@@ -53,6 +54,7 @@ app.use('/api/intereses', interesRoutes);
 app.use('/api/operaciones', operacionRoutes);
 app.use('/api/visitas', visitaRoutes);
 app.use('/api/seguimientos', seguimientoRoutes);
+app.use('/api/admin/dashboard', dashboardRoutes);
 
 // --- DEFINIR RELACIONES ---
 // Esto soluciona el error 500 "Relation does not exist"

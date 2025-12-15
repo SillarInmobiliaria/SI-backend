@@ -105,26 +105,30 @@ export const crearPropiedad = async (req: Request, res: Response) => {
     }
 };
 
-// 2. OBTENER VARIOS (Modo Debug: Todo visible)
+// 2. OBTENER PROPIEDADES
 export const obtenerPropiedades = async (req: Request, res: Response) => {
     try {
         const usuario = (req as any).user;
-        let where: any = {};
+        let whereClause: any = {};
         
-        if (usuario?.rol !== 'ADMIN') {
-            where = { usuarioId: usuario.id };
+        // Si hay usuario y NO es admin, filtra solo las suyas
+        if (usuario && usuario.rol !== 'ADMIN') {
+            whereClause = { usuarioId: usuario.id };
         }
 
         const propiedades = await Propiedad.findAll({ 
-            where, 
-            // ⚠️ HE QUITADO EL EXCLUDE PARA QUE PUEDAS VER SI SE GUARDAN LOS DATOS
-            // attributes: { exclude: ['observaciones'] }, 
-            include: [{ model: Propietario }]
+            where: whereClause, 
+            // include: ... (lo que ya tengas)
+            include: [{ model: Propietario }],
+            
+            order: [['createdAt', 'DESC']] 
         });
 
+        // Parseamos los comentarios para que el front los entienda
         const respuesta = propiedades.map(p => parseObservaciones(p));
+
         res.json(respuesta);
-    } catch (e) { res.status(500).json({ message: 'Error' }); }
+    } catch (e) { res.status(500).json({ message: 'Error al obtener' }); }
 };
 
 // 3. OBTENER UNO (Modo Debug: Todo visible)
@@ -189,7 +193,6 @@ export const updatePropiedad = async (req: Request, res: Response) => {
     }
 };
 
-// ... Resto igual (toggle, eliminar)
 export const toggleEstadoPropiedad = async (req: Request, res: Response) => {
     try {
         const p = await Propiedad.findByPk(req.params.id);

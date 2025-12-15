@@ -3,10 +3,10 @@ import jwt from 'jsonwebtoken';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'sillar_secreto_super_seguro';
 
+// 1. TU MIDDLEWARE ACTUAL (Verifica que esté logueado)
 export const authMiddleware = (req: Request, res: Response, next: NextFunction): void => {
-  // 1. Obtener el header Authorization
   const authHeader = req.headers['authorization'];
-  const token = authHeader && authHeader.split(' ')[1]; // "Bearer TOKEN"
+  const token = authHeader && authHeader.split(' ')[1];
 
   if (!token) {
     res.status(401).json({ message: 'Acceso denegado. No hay token.' });
@@ -14,14 +14,22 @@ export const authMiddleware = (req: Request, res: Response, next: NextFunction):
   }
 
   try {
-    // 2. Verificar el token
     const decoded = jwt.verify(token, JWT_SECRET);
-    
-    // 3. Guardar datos del usuario en la request para usarlos luego
-    (req as any).user = decoded;
-    
-    next(); // Pasar al siguiente controlador
+    (req as any).user = decoded; // Guardamos datos del usuario
+    next();
   } catch (error) {
     res.status(403).json({ message: 'Token inválido o expirado.' });
   }
+};
+
+export const esAdmin = (req: Request, res: Response, next: NextFunction): void => {
+  const usuario = (req as any).user;
+
+  // Verificamos si existe el usuario y si su rol es ADMIN
+  if (!usuario || usuario.rol !== 'ADMIN') {
+    res.status(403).json({ message: 'Acceso prohibido. Se requiere rol de Administrador.' });
+    return;
+  }
+
+  next(); // Si es admin, pase usted
 };
