@@ -1,7 +1,9 @@
 import { DataTypes, Model } from 'sequelize';
 import db from '../config/db';
 
-class Interes extends Model {}
+class Interes extends Model {
+  nota: any;
+}
 
 Interes.init(
   {
@@ -12,18 +14,16 @@ Interes.init(
     },
     estado: {
       type: DataTypes.STRING,
-      defaultValue: 'Pendiente', // Por defecto, el interés es nuevo
+      defaultValue: 'Pendiente',
     },
     nota: {
-      type: DataTypes.TEXT, // Por si quieres anotar "Llamar por la tarde"
+      type: DataTypes.TEXT,
       allowNull: true,
     },
-    // Relación con Cliente
     clienteId: {
       type: DataTypes.UUID,
       allowNull: false,
     },
-    // Relación con Propiedad
     propiedadId: {
       type: DataTypes.UUID,
       allowNull: false,

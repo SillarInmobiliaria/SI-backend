@@ -17,9 +17,7 @@ import Usuario from './models/Usuario';
 import './models/SolicitudPermiso';
 import './models/Notificacion';
 
-// IMPORTAR MODELOS PARA RELACIONES (CRÍTICO PARA EL ERROR 500)
-import Propiedad from './models/Propiedad';
-import Propietario from './models/Propietario';
+import { definirAsociaciones } from './models/Asociaciones';
 
 // Importar Rutas
 import authRoutes from './routes/authRoutes';
@@ -56,22 +54,15 @@ app.use('/api/visitas', visitaRoutes);
 app.use('/api/seguimientos', seguimientoRoutes);
 app.use('/api/admin/dashboard', dashboardRoutes);
 
-// --- DEFINIR RELACIONES ---
-// Esto soluciona el error 500 "Relation does not exist"
-Propiedad.belongsToMany(Propietario, { through: 'PropiedadPropietario' });
-Propietario.belongsToMany(Propiedad, { through: 'PropiedadPropietario' });
-
-// --- FUNCIÓN DE EMERGENCIA: SIEMPRE RESETEA LA CONTRASEÑA ---
+// --- FUNCIÓN DE EMERGENCIA: RESETEA LA CONTRASEÑA ---
 const crearUsuariosPorDefecto = async () => {
     try {
         console.log('🔄 Verificando acceso de Administrador...');
         
         const emailAdmin = 'admin@sillar.com';
-        // Generamos el hash de "123456" fresco
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash('123456', salt);
 
-        // Buscamos si existe
         let admin = await Usuario.findOne({ where: { email: emailAdmin } });
         
         if (!admin) {
@@ -86,19 +77,13 @@ const crearUsuariosPorDefecto = async () => {
                 mustChangePassword: false
             });
         } else {
-            // SI YA EXISTE, LE RESETEAMOS LA CONTRASEÑA A LA FUERZA
-            // Esto arregla el problema de "Contraseña Incorrecta"
             console.log('⚠️ El Admin ya existe. FORZANDO contraseña a 123456...');
-            
-            // Usamos update para asegurar que se guarde
             await Usuario.update(
                 { password: hashedPassword, activo: true },
                 { where: { email: emailAdmin } }
             );
         }
-
         console.log('✅ ACCESO GARANTIZADO: admin@sillar.com / 123456');
-
     } catch (error) {
         console.error('Error gestionando usuarios:', error);
     }
@@ -106,15 +91,18 @@ const crearUsuariosPorDefecto = async () => {
 
 const conectarDB = async () => {
     try {
+        // 1. Autenticar conexión
         await db.authenticate();
         console.log('✅ Base de Datos Conectada.');
         
-        // Usamos alter: true para no borrar tus datos, pero actualizar estructura
+        definirAsociaciones();
+        console.log('✅ Relaciones (Asociaciones) establecidas.');
+
+        // 3. Sincronizar Tablas
         await db.sync({ alter: true }); 
-        
         console.log('✅ Tablas Sincronizadas.');
 
-        // Ejecutamos la función de emergencia
+        // 4. Usuarios por defecto
         await crearUsuariosPorDefecto(); 
 
     } catch (error) {

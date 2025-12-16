@@ -3,8 +3,8 @@ import { Op } from 'sequelize';
 import ExcelJS from 'exceljs';
 import Propiedad from '../models/Propiedad';
 import Propietario from '../models/Propietario';
-import Usuario from '../models/Usuario';
-import Visita from '../models/Visita'; // 👈 Importamos Visita
+import Cliente from '../models/Cliente';
+import Visita from '../models/Visita';
 
 // --- HELPERS ---
 const getRangoAnio = (anio: number) => {
@@ -13,7 +13,7 @@ const getRangoAnio = (anio: number) => {
     return { inicio, fin };
 };
 
-// Función auxiliar mejorada para aceptar filtros extra
+// Función auxiliar para contar registros por mes
 async function getConteoPorMeses(Modelo: any, anio: number, extraWhere: any = {}) {
     const datosMensuales = [];
     
@@ -24,7 +24,7 @@ async function getConteoPorMeses(Modelo: any, anio: number, extraWhere: any = {}
         const count = await Modelo.count({
             where: { 
                 createdAt: { [Op.between]: [inicio, fin] },
-                ...extraWhere // 👈 Permite filtrar solo COMPLETADAS
+                ...extraWhere 
             }
         });
         datosMensuales.push(count);
@@ -43,8 +43,9 @@ export const getDashboardStats = async (req: Request, res: Response) => {
 
         const totalPropiedades = await Propiedad.count({ where: whereAnio });
         const totalPropietarios = await Propietario.count({ where: whereAnio });
-        const totalClientes = await Usuario.count({ where: whereAnio });
         
+        const totalClientes = await Cliente.count({ where: whereAnio });
+
         // Contamos solo las visitas REALIZADAS (COMPLETADA)
         const totalVisitas = await Visita.count({ 
             where: { 
@@ -56,9 +57,9 @@ export const getDashboardStats = async (req: Request, res: Response) => {
         // B. Datos para la Gráfica (Mes a Mes)
         const [grafPropiedades, grafClientes, grafPropietarios, grafVisitas] = await Promise.all([
             getConteoPorMeses(Propiedad, yearQuery),
-            getConteoPorMeses(Usuario, yearQuery),
+            getConteoPorMeses(Cliente, yearQuery),
             getConteoPorMeses(Propietario, yearQuery),
-            getConteoPorMeses(Visita, yearQuery, { estado: 'COMPLETADA' }) // 👈 Filtramos visitas
+            getConteoPorMeses(Visita, yearQuery, { estado: 'COMPLETADA' })
         ]);
 
         const meses = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
@@ -68,7 +69,7 @@ export const getDashboardStats = async (req: Request, res: Response) => {
             propiedades: grafPropiedades[index],
             clientes: grafClientes[index],
             propietarios: grafPropietarios[index],
-            visitas: grafVisitas[index] // 👈 Agregamos a la gráfica
+            visitas: grafVisitas[index]
         }));
 
         res.json({
@@ -77,7 +78,7 @@ export const getDashboardStats = async (req: Request, res: Response) => {
                 propiedades: totalPropiedades,
                 propietarios: totalPropietarios,
                 clientes: totalClientes,
-                visitas: totalVisitas // 👈 Enviamos total
+                visitas: totalVisitas
             },
             grafica: datosGrafica
         });
@@ -88,7 +89,7 @@ export const getDashboardStats = async (req: Request, res: Response) => {
     }
 };
 
-// 2. EXPORTAR REPORTE EXCEL GENERAL (DASHBOARD)
+// 2. EXPORTAR REPORTE EXCEL
 export const exportarReporteExcel = async (req: Request, res: Response) => {
     try {
         const workbook = new ExcelJS.Workbook();
