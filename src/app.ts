@@ -29,6 +29,8 @@ import interesRoutes from './routes/interesRoutes';
 import operacionRoutes from './routes/operacionRoutes';
 import visitaRoutes from './routes/visitaRoutes';
 import seguimientoRoutes from './routes/seguimientoRoutes';
+// 🟢 1. IMPORTAR LA RUTA DE CUMPLEAÑOS
+import cumpleanosRoutes from './routes/cumpleanosRoutes';
 
 dotenv.config();
 
@@ -53,12 +55,13 @@ app.use('/api/operaciones', operacionRoutes);
 app.use('/api/visitas', visitaRoutes);
 app.use('/api/seguimientos', seguimientoRoutes);
 app.use('/api/admin/dashboard', dashboardRoutes);
+// 🟢 2. USAR LA RUTA
+app.use('/api/admin/cumpleanos', cumpleanosRoutes);
 
-// --- FUNCIÓN DE EMERGENCIA: RESETEA LA CONTRASEÑA ---
+// --- FUNCIÓN DE EMERGENCIA ---
 const crearUsuariosPorDefecto = async () => {
     try {
         console.log('🔄 Verificando acceso de Administrador...');
-        
         const emailAdmin = 'admin@sillar.com';
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash('123456', salt);
@@ -91,18 +94,15 @@ const crearUsuariosPorDefecto = async () => {
 
 const conectarDB = async () => {
     try {
-        // 1. Autenticar conexión
         await db.authenticate();
         console.log('✅ Base de Datos Conectada.');
         
         definirAsociaciones();
         console.log('✅ Relaciones (Asociaciones) establecidas.');
 
-        // 3. Sincronizar Tablas
         await db.sync({ alter: true }); 
         console.log('✅ Tablas Sincronizadas.');
 
-        // 4. Usuarios por defecto
         await crearUsuariosPorDefecto(); 
 
     } catch (error) {
