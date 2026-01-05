@@ -1,7 +1,10 @@
 import { DataTypes, Model } from 'sequelize';
 import db from '../config/db';
 
-class Cliente extends Model {}
+class Cliente extends Model {
+  // Declaración de tipos para TS (opcional pero recomendado)
+  public tipo!: 'PROSPECTO' | 'CLIENTE';
+}
 
 Cliente.init(
   {
@@ -10,18 +13,26 @@ Cliente.init(
       defaultValue: DataTypes.UUIDV4,
       primaryKey: true,
     },
+    //  Define si es un interesado (Prospecto) o ya formal (Cliente)
+    tipo: {
+      type: DataTypes.ENUM('PROSPECTO', 'CLIENTE'),
+      defaultValue: 'PROSPECTO',
+      allowNull: false
+    },
     nombre: {
       type: DataTypes.STRING,
       allowNull: false,
     },
+    // Ahora es OPCIONAL al inicio (para Prospectos)
     dni: {
-      type: DataTypes.STRING(8),
-      allowNull: false,
+      type: DataTypes.STRING(20),
+      allowNull: true, 
       unique: true,
     },
+    // FECHA NACIMIENTO: Ahora opcional
     fechaNacimiento: {
       type: DataTypes.DATEONLY,
-      allowNull: false,
+      allowNull: true,
     },
     direccion: {
       type: DataTypes.STRING,
@@ -31,12 +42,13 @@ Cliente.init(
       type: DataTypes.STRING,
       allowNull: true,
     },
+    // TELÉFONO: Sigue siendo OBLIGATORIO (es la llave del contacto)
     telefono1: {
-      type: DataTypes.STRING(9),
+      type: DataTypes.STRING(20),
       allowNull: false,
     },
     telefono2: {
-      type: DataTypes.STRING(9),
+      type: DataTypes.STRING(20),
       allowNull: true,
     },
     estadoCivil: {

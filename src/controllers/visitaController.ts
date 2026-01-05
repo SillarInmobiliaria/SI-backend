@@ -1,12 +1,12 @@
 import { Request, Response } from 'express';
 import { Op } from 'sequelize';
-import ExcelJS from 'exceljs'; // 👈 Importante para el Excel
+import ExcelJS from 'exceljs';
 import Visita from '../models/Visita';
 import Usuario from '../models/Usuario';
 import Propiedad from '../models/Propiedad';
 import Cliente from '../models/Cliente';
 
-// 1. CREAR
+// 1. CREAR VISITA
 export const crearVisita = async (req: Request, res: Response) => {
     try {
         let { fechaProgramada, comentariosPrevios, clienteId, propiedadId, asesorId } = req.body;
@@ -32,7 +32,7 @@ export const crearVisita = async (req: Request, res: Response) => {
     }
 };
 
-// 2. OBTENER
+// 2. OBTENER VISITAS
 export const obtenerVisitas = async (req: Request, res: Response) => {
     try {
         const usuario = (req as any).user;
@@ -45,9 +45,22 @@ export const obtenerVisitas = async (req: Request, res: Response) => {
         const visitas = await Visita.findAll({
             where: whereClause,
             include: [
-                { model: Cliente, as: 'cliente', attributes: ['nombre', 'email', 'telefono1'] },
-                { model: Propiedad, as: 'propiedad', attributes: ['tipo', 'ubicacion', 'precio'] },
-                { model: Usuario, as: 'asesor', attributes: ['nombre'] }
+                { 
+                    model: Cliente, 
+                    as: 'cliente', 
+                    // Traemos todos los datos para rellenar el formulario
+                    attributes: ['id', 'nombre', 'email', 'telefono1', 'tipo', 'dni', 'direccion', 'ocupacion', 'estadoCivil'] 
+                },
+                { 
+                    model: Propiedad, 
+                    as: 'propiedad', 
+                    attributes: ['tipo', 'ubicacion', 'precio', 'direccion'] 
+                },
+                { 
+                    model: Usuario, 
+                    as: 'asesor', 
+                    attributes: ['nombre'] 
+                }
             ],
             order: [['fechaProgramada', 'ASC']]
         });
@@ -59,20 +72,63 @@ export const obtenerVisitas = async (req: Request, res: Response) => {
     }
 };
 
-// 3. ACTUALIZAR
+// 3. ACTUALIZAR VISITA
 export const actualizarVisita = async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
-        const { estado, resultadoSeguimiento } = req.body;
+        // Recibimos datos de la visita Y datos potenciales del cliente
+        const { 
+            estado, 
+            resultadoSeguimiento,
+            // Datos para completar el perfil del cliente
+            dni, 
+            email, 
+            direccion, 
+            fechaNacimiento,
+            ocupacion 
+        } = req.body;
 
         const visita = await Visita.findByPk(id);
         if (!visita) return res.status(404).json({ message: 'Visita no encontrada' });
 
+        // Si se está completando la visita
+        if (estado === 'COMPLETADA') {
+            const cliente = await Cliente.findByPk(visita.clienteId);
+            
+            if (cliente) {
+                // Si sigue siendo PROSPECTO, validamos que vengan los datos obligatorios
+                if (cliente.getDataValue('tipo') === 'PROSPECTO') {
+                    if (!dni || !email) {
+                        return res.status(400).json({ 
+                            message: '⚠️ Acción Bloqueada: Para finalizar la visita de un Prospecto, debe ingresar DNI y Email obligatoriamente.' 
+                        });
+                    }
+
+                    // De Prospecto a Cliente
+                    console.log(`🚀 Actualizando Prospecto ${cliente.getDataValue('nombre')} a CLIENTE...`);
+                    await cliente.update({
+                        dni,
+                        email,
+                        direccion,
+                        fechaNacimiento,
+                        ocupacion,
+                        tipo: 'CLIENTE'
+                    });
+                } else {
+                    // Si ya era CLIENTE, igual permitimos actualizar datos si enviaron algo nuevo
+                    if (dni || email || direccion) {
+                        await cliente.update({ dni, email, direccion, fechaNacimiento, ocupacion });
+                    }
+                }
+            }
+        }
+
+        // Actualizar la visita
         if (estado) visita.estado = estado;
         if (resultadoSeguimiento) visita.resultadoSeguimiento = resultadoSeguimiento;
 
         await visita.save();
-        res.json({ message: 'Visita actualizada', visita });
+        res.json({ message: 'Visita actualizada y datos de cliente procesados', visita });
 
     } catch (error) {
         console.error(error);
@@ -80,7 +136,7 @@ export const actualizarVisita = async (req: Request, res: Response) => {
     }
 };
 
-// 4. EXPORTAR SEGUIMIENTO (NUEVO)
+// 4. EXPORTAR SEGUIMIENTO
 export const exportarSeguimientoExcel = async (req: Request, res: Response) => {
     try {
         const { mes, anio, estado } = req.query;
@@ -123,6 +179,7 @@ export const exportarSeguimientoExcel = async (req: Request, res: Response) => {
             { header: 'Fecha', key: 'fecha', width: 15 },
             { header: 'Hora', key: 'hora', width: 10 },
             { header: 'Cliente', key: 'cliente', width: 25 },
+            { header: 'Tipo', key: 'tipo', width: 15 },
             { header: 'Propiedad', key: 'propiedad', width: 30 },
             { header: 'Asesor', key: 'asesor', width: 20 },
             { header: 'Estado', key: 'estado', width: 15 },
@@ -135,6 +192,7 @@ export const exportarSeguimientoExcel = async (req: Request, res: Response) => {
                 fecha: fechaObj.toLocaleDateString(),
                 hora: fechaObj.toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'}),
                 cliente: v.cliente?.nombre || 'N/A',
+                tipo: v.cliente?.tipo || 'N/A',
                 propiedad: `${v.propiedad?.tipo} - ${v.propiedad?.ubicacion}`,
                 asesor: v.asesor?.nombre || 'N/A',
                 estado: v.estado,
