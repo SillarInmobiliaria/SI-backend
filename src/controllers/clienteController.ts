@@ -16,7 +16,7 @@ export const crearCliente = async (req: Request, res: Response) => {
   }
 };
 
-// 2. OBTENER (CORREGIDO: Muestra todo para que no se "pierdan")
+// 2. OBTENER
 export const obtenerClientes = async (req: Request, res: Response) => {
   try {
     const usuario = (req as any).user;

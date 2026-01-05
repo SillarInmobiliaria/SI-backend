@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { obtenerCumpleanos, exportarExcelCumpleanos } from '../controllers/cumpleanosController';
-import { verificarToken, esAdmin } from '../middleware/authMiddleware'; // Asegúrate de tener estos middlewares
+import { verificarToken, esAdmin } from '../middleware/authMiddleware';
 
 const router = Router();
 
