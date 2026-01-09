@@ -14,9 +14,8 @@ const limpiarFecha = (valor: any) => {
     return valor;
 };
 
-// 🟢 MEJORA: Ahora soporta 'null' para los estados del Checklist Legal (Amarillo/Pendiente)
 const parseBoolean = (valor: any) => {
-    if (valor === 'null' || valor === null) return null; // Permite el estado intermedio
+    if (valor === 'null' || valor === null) return null;
     if (valor === undefined) return undefined;
     
     if (typeof valor === 'boolean') return valor;
@@ -28,23 +27,16 @@ const parseBoolean = (valor: any) => {
         if (['false', '0', 'off'].includes(v)) return false;
         if (v === 'null') return null;
     }
-    return false; // Default si no se reconoce
+    return false;
 };
 
-// Helper para enviar el JSON de comentarios correctamente al frontend
 const parseObservaciones = (propiedad: any) => {
     const data = propiedad.toJSON ? propiedad.toJSON() : propiedad;
-    
-    // Si observaciones es un string que parece JSON, lo convertimos a objeto
     if (data.observaciones && typeof data.observaciones === 'string') {
         try {
             data.observaciones = JSON.parse(data.observaciones);
-        } catch (e) {
-            // Si no es JSON válido, lo dejamos como texto normal
-        }
+        } catch (e) {}
     }
-    
-    // IMPORTANTE: Mapeamos 'observaciones' a 'comentarios' por compatibilidad
     data.comentarios = data.observaciones; 
     return data;
 };
@@ -66,6 +58,9 @@ export const crearPropiedad = async (req: Request, res: Response) => {
         let datosPropiedad = {
             ...resto,
             precio: limpiarNumero(rawBody.precio),
+            // Guardamos mantenimiento
+            mantenimiento: limpiarNumero(rawBody.mantenimiento),
+            
             area: limpiarNumero(rawBody.area),
             areaConstruida: limpiarNumero(rawBody.areaConstruida),
             habitaciones: limpiarNumero(rawBody.habitaciones),
@@ -75,11 +70,9 @@ export const crearPropiedad = async (req: Request, res: Response) => {
             fechaCaptacion: limpiarFecha(rawBody.fechaCaptacion),
             inicioContrato: limpiarFecha(rawBody.inicioContrato),
             finContrato: limpiarFecha(rawBody.finContrato),
-            // Guardamos comentarios como STRING JSON
             observaciones: typeof rawBody.observaciones === 'object' ? JSON.stringify(rawBody.observaciones) : (rawBody.observaciones || '')
         };
 
-        // Booleanos (Checklist Legal)
         const bools = ['testimonio', 'hr', 'pu', 'impuestoPredial', 'arbitrios', 'copiaLiteral', 'revision'];
         bools.forEach(f => datosPropiedad[f] = parseBoolean(resto[f] ?? rawBody[f]));
 
@@ -87,7 +80,6 @@ export const crearPropiedad = async (req: Request, res: Response) => {
             try { const p = JSON.parse(resto.galeria); if (Array.isArray(p)) galeria = p; } catch (e) {}
         }
 
-        // Gestión del Propietario (Busca o Crea)
         let propId = null;
         if (dni) {
              const existe = await Propietario.findOne({ where: { dni }, transaction: t });
@@ -114,7 +106,6 @@ export const crearPropiedad = async (req: Request, res: Response) => {
             propietarioId: propId
         }, { transaction: t });
 
-        // Vinculación Many-to-Many si usas esa relación, o campo directo si es One-to-Many
         if (propId && (nueva as any).addPropietario) {
             await (nueva as any).addPropietario(propId, { transaction: t });
         }
@@ -129,20 +120,18 @@ export const crearPropiedad = async (req: Request, res: Response) => {
     }
 };
 
-// 2. OBTENER PROPIEDADES (LISTA)
+// 2. OBTENER PROPIEDADES
 export const obtenerPropiedades = async (req: Request, res: Response) => {
     try {
         const usuario = (req as any).user;
         let whereClause: any = {};
         
-        // Si no es ADMIN, solo ve sus propiedades
         if (usuario && usuario.rol !== 'ADMIN') {
             whereClause = { usuarioId: usuario.id };
         }
 
         const propiedades = await Propiedad.findAll({ 
             where: whereClause, 
-            // Incluimos Propietario para que salga el nombre en la tabla
             include: [{ model: Propietario }], 
             order: [['createdAt', 'DESC']] 
         });
@@ -156,11 +145,10 @@ export const obtenerPropiedades = async (req: Request, res: Response) => {
     }
 };
 
-// 3. OBTENER UNA PROPIEDAD (DETALLE)
+// 3. OBTENER DETALLE
 export const getPropiedad = async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
-        // 🟢 CLAVE: El include aquí es vital para el botón "Contactar Dueño"
         const propiedad = await Propiedad.findByPk(id, { 
             include: [{ model: Propietario }] 
         });
@@ -187,24 +175,18 @@ export const updatePropiedad = async (req: Request, res: Response) => {
 
         const updates: any = {};
 
-        // Números
-        ['precio', 'area', 'areaConstruida', 'habitaciones', 'banos', 'cocheras', 'comision']
+        // 🟢 NUEVO: Incluimos mantenimiento en la actualización
+        ['precio', 'mantenimiento', 'area', 'areaConstruida', 'habitaciones', 'banos', 'cocheras', 'comision']
             .forEach(f => { if (raw[f] !== undefined) updates[f] = limpiarNumero(raw[f]); });
         
-        // Si precio viene null explícitamente, lo dejamos (o lo borramos si prefieres no nulls)
         if (updates.precio === null) delete updates.precio; 
 
-        // Booleanos (Checklist Legal) - Usa el nuevo parseBoolean que acepta nulls
         ['testimonio', 'hr', 'pu', 'impuestoPredial', 'arbitrios', 'copiaLiteral', 'revision']
-            .forEach(f => { 
-                if (raw[f] !== undefined) updates[f] = parseBoolean(raw[f]); 
-            });
+            .forEach(f => { if (raw[f] !== undefined) updates[f] = parseBoolean(raw[f]); });
 
-        // Fechas
         ['fechaCaptacion', 'inicioContrato', 'finContrato']
             .forEach(f => { if (raw[f] !== undefined) updates[f] = limpiarFecha(raw[f]); });
 
-        // Textos y URLs
         ['tipo', 'modalidad', 'ubicacion', 'direccion', 'moneda', 'descripcion', 
          'detalles', 'videoUrl', 'mapaUrl', 'pdfUrl', 'tipoContrato', 'asesor',
          'partidaRegistral', 'partidaAdicional', 'partidaCochera', 'partidaDeposito',
@@ -212,16 +194,12 @@ export const updatePropiedad = async (req: Request, res: Response) => {
              if (raw[f] !== undefined) updates[f] = raw[f]; 
          });
 
-        // Manejo especial de Observaciones (JSON String)
-        // El frontend envía el objeto entero de observaciones en 'observaciones'
         let obs = raw.observaciones;
         if (obs !== undefined) {
             updates.observaciones = typeof obs === 'object' ? JSON.stringify(obs) : String(obs);
         }
 
         await propiedad.update(updates);
-        
-        // Devolvemos el objeto actualizado y parseado
         const propiedadActualizada = await Propiedad.findByPk(id, { include: [{ model: Propietario }] });
         res.json({ message: 'Actualizada correctamente', propiedad: parseObservaciones(propiedadActualizada) });
 
@@ -231,7 +209,7 @@ export const updatePropiedad = async (req: Request, res: Response) => {
     }
 };
 
-// 5. CAMBIAR ESTADO (ACTIVO/SUSPENDIDO)
+// 5. CAMBIAR ESTADO
 export const toggleEstadoPropiedad = async (req: Request, res: Response) => {
     try {
         const p = await Propiedad.findByPk(req.params.id);

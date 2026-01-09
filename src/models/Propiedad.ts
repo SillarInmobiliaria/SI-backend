@@ -17,43 +17,41 @@ Propiedad.init(
     direccion: { type: DataTypes.STRING, allowNull: true },
     precio: { type: DataTypes.DECIMAL(12, 2), allowNull: false },
     moneda: { type: DataTypes.STRING, defaultValue: 'USD' },
+    
+    // Mantenimiento (Para departamentos)
+    mantenimiento: { type: DataTypes.DECIMAL(10, 2), allowNull: true },
+
     area: { type: DataTypes.FLOAT, allowNull: true },
     areaConstruida: { type: DataTypes.FLOAT, allowNull: true },
-    
-    // --- DETALLES ---
     habitaciones: { type: DataTypes.INTEGER, allowNull: true },
     banos: { type: DataTypes.INTEGER, allowNull: true },
     cocheras: { type: DataTypes.INTEGER, allowNull: true },
     descripcion: { type: DataTypes.TEXT, allowNull: true },
-    detalles: { type: DataTypes.TEXT, allowNull: true }, // Distribución interna
+    detalles: { type: DataTypes.TEXT, allowNull: true },
 
-    // --- MULTIMEDIA ---
     fotoPrincipal: { type: DataTypes.STRING, allowNull: true },
-    galeria: { type: DataTypes.JSON, allowNull: true }, // Array de rutas de fotos
+    galeria: { type: DataTypes.JSON, allowNull: true },
     videoUrl: { type: DataTypes.STRING, allowNull: true },
     mapaUrl: { type: DataTypes.TEXT, allowNull: true },
     pdfUrl: { type: DataTypes.STRING, allowNull: true },
 
-    // --- LINKS EXTERNOS (NUEVO) ---
     link1: { type: DataTypes.STRING, allowNull: true },
     link2: { type: DataTypes.STRING, allowNull: true },
     link3: { type: DataTypes.STRING, allowNull: true },
     link4: { type: DataTypes.STRING, allowNull: true },
     link5: { type: DataTypes.STRING, allowNull: true },
 
-    // --- DATOS LEGALES Y CONTRATO (NUEVO) ---
     partidaRegistral: { type: DataTypes.STRING, allowNull: true },
-    partidaAdicional: { type: DataTypes.STRING, allowNull: true }, // Depas
-    partidaCochera: { type: DataTypes.STRING, allowNull: true },   // Depas
-    partidaDeposito: { type: DataTypes.STRING, allowNull: true },  // Depas
+    partidaAdicional: { type: DataTypes.STRING, allowNull: true },
+    partidaCochera: { type: DataTypes.STRING, allowNull: true },
+    partidaDeposito: { type: DataTypes.STRING, allowNull: true },
     
     fechaCaptacion: { type: DataTypes.DATEONLY, allowNull: true },
     inicioContrato: { type: DataTypes.DATEONLY, allowNull: true },
     finContrato: { type: DataTypes.DATEONLY, allowNull: true },
-    tipoContrato: { type: DataTypes.STRING, allowNull: true }, // Exclusiva / Sin Exclusiva
+    tipoContrato: { type: DataTypes.STRING, allowNull: true },
     comision: { type: DataTypes.FLOAT, allowNull: true },
 
-    // --- CHECKLIST DOCUMENTOS (True/False) ---
     testimonio: { type: DataTypes.BOOLEAN, defaultValue: false },
     hr: { type: DataTypes.BOOLEAN, defaultValue: false },
     pu: { type: DataTypes.BOOLEAN, defaultValue: false },
@@ -63,11 +61,10 @@ Propiedad.init(
 
     revision: { type: DataTypes.BOOLEAN, defaultValue: false },
 
-    // --- GESTIÓN ---
-    asesor: { type: DataTypes.STRING, allowNull: true }, // Nombre del asesor
-    usuarioId: { type: DataTypes.UUID, allowNull: true }, // ID del asesor (Relación)
+    asesor: { type: DataTypes.STRING, allowNull: true },
+    usuarioId: { type: DataTypes.UUID, allowNull: true },
     activo: { type: DataTypes.BOOLEAN, defaultValue: true },
-    observaciones: { type: DataTypes.TEXT, allowNull: true } // Para guardar notas del abogado (texto libre)
+    observaciones: { type: DataTypes.TEXT, allowNull: true }
   },
   {
     sequelize: db,
