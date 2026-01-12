@@ -4,6 +4,7 @@ import Interes from './Interes';
 import Propietario from './Propietario';
 import Usuario from './Usuario';
 import Visita from './Visita';
+import Seguimiento from './Seguimiento';
 
 export const definirAsociaciones = () => {
     // 1. Relación Cliente <-> Interés (Uno a Muchos)
@@ -27,4 +28,16 @@ export const definirAsociaciones = () => {
 
     Usuario.hasMany(Visita, { foreignKey: 'asesorId', as: 'visitas' });
     Visita.belongsTo(Usuario, { foreignKey: 'asesorId', as: 'asesor' });
+
+    // Cliente tiene muchos seguimientos
+    Cliente.hasMany(Seguimiento, { foreignKey: 'clienteId' });
+    Seguimiento.belongsTo(Cliente, { foreignKey: 'clienteId' });
+
+    // Propiedad tiene muchos seguimientos (opcional)
+    Propiedad.hasMany(Seguimiento, { foreignKey: 'propiedadId' });
+    Seguimiento.belongsTo(Propiedad, { foreignKey: 'propiedadId' });
+
+    // Usuario (Asesor) registra los seguimientos
+    Usuario.hasMany(Seguimiento, { foreignKey: 'usuarioId' });
+    Seguimiento.belongsTo(Usuario, { foreignKey: 'usuarioId' });
 };
