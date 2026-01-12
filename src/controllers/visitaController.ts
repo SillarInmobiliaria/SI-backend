@@ -11,9 +11,10 @@ export const crearVisita = async (req: Request, res: Response) => {
     try {
         let { fechaProgramada, comentariosPrevios, clienteId, propiedadId, asesorId } = req.body;
         
-        // Si no envía asesor, asignamos el usuario logueado
+        // Asignar usuario logueado si no se especifica
         if (!asesorId) {
-            asesorId = (req as any).user.id;
+            const usuario = (req as any).user;
+            if (usuario) asesorId = usuario.id;
         }
 
         const nuevaVisita = await Visita.create({
@@ -36,8 +37,15 @@ export const crearVisita = async (req: Request, res: Response) => {
 export const obtenerVisitas = async (req: Request, res: Response) => {
     try {
         const usuario = (req as any).user;
+
+        // 🛡️ PROTECCIÓN CONTRA CAÍDAS (Fix del Error 500)
+        if (!usuario) {
+            return res.status(401).json({ message: 'No autorizado. Token inválido o sesión expirada.' });
+        }
+
         let whereClause = {};
 
+        // Si no es ADMIN, solo ve sus propias visitas
         if (usuario.rol !== 'ADMIN') {
             whereClause = { asesorId: usuario.id };
         }
@@ -48,7 +56,6 @@ export const obtenerVisitas = async (req: Request, res: Response) => {
                 { 
                     model: Cliente, 
                     as: 'cliente', 
-                    // Traemos todos los datos para rellenar el formulario
                     attributes: ['id', 'nombre', 'email', 'telefono1', 'tipo', 'dni', 'direccion', 'ocupacion', 'estadoCivil'] 
                 },
                 { 
@@ -67,55 +74,41 @@ export const obtenerVisitas = async (req: Request, res: Response) => {
 
         res.json(visitas);
     } catch (error) {
-        console.error(error);
+        console.error("Error en obtenerVisitas:", error);
         res.status(500).json({ message: 'Error al obtener visitas' });
     }
 };
 
-// 3. ACTUALIZAR VISITA
+// 3. ACTUALIZAR VISITA (Finalizar)
 export const actualizarVisita = async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
-        // Recibimos datos de la visita Y datos potenciales del cliente
         const { 
             estado, 
             resultadoSeguimiento,
-            // Datos para completar el perfil del cliente
-            dni, 
-            email, 
-            direccion, 
-            fechaNacimiento,
-            ocupacion 
+            dni, email, direccion, fechaNacimiento, ocupacion 
         } = req.body;
 
         const visita = await Visita.findByPk(id);
         if (!visita) return res.status(404).json({ message: 'Visita no encontrada' });
 
-        // Si se está completando la visita
         if (estado === 'COMPLETADA') {
             const cliente = await Cliente.findByPk(visita.clienteId);
             
             if (cliente) {
-                // Si sigue siendo PROSPECTO, validamos que vengan los datos obligatorios
+                // Si es PROSPECTO, validamos datos obligatorios para convertirlo
                 if (cliente.getDataValue('tipo') === 'PROSPECTO') {
                     if (!dni || !email) {
                         return res.status(400).json({ 
                             message: '⚠️ Acción Bloqueada: Para finalizar la visita de un Prospecto, debe ingresar DNI y Email obligatoriamente.' 
                         });
                     }
-
-                    // De Prospecto a Cliente
                     console.log(`🚀 Actualizando Prospecto ${cliente.getDataValue('nombre')} a CLIENTE...`);
                     await cliente.update({
-                        dni,
-                        email,
-                        direccion,
-                        fechaNacimiento,
-                        ocupacion,
-                        tipo: 'CLIENTE'
+                        dni, email, direccion, fechaNacimiento, ocupacion, tipo: 'CLIENTE'
                     });
                 } else {
-                    // Si ya era CLIENTE, igual permitimos actualizar datos si enviaron algo nuevo
+                    // Si ya es CLIENTE, actualizamos datos si vienen nuevos
                     if (dni || email || direccion) {
                         await cliente.update({ dni, email, direccion, fechaNacimiento, ocupacion });
                     }
@@ -123,12 +116,11 @@ export const actualizarVisita = async (req: Request, res: Response) => {
             }
         }
 
-        // Actualizar la visita
         if (estado) visita.estado = estado;
         if (resultadoSeguimiento) visita.resultadoSeguimiento = resultadoSeguimiento;
 
         await visita.save();
-        res.json({ message: 'Visita actualizada y datos de cliente procesados', visita });
+        res.json({ message: 'Visita actualizada y datos procesados', visita });
 
     } catch (error) {
         console.error(error);
@@ -136,14 +128,32 @@ export const actualizarVisita = async (req: Request, res: Response) => {
     }
 };
 
-// 4. EXPORTAR SEGUIMIENTO
+// 4. CANCELAR VISITA
+export const cancelarVisita = async (req: Request, res: Response) => {
+    try {
+        const { id } = req.params;
+        const { motivo } = req.body; 
+
+        const visita = await Visita.findByPk(id);
+        if (!visita) return res.status(404).json({ message: 'Visita no encontrada' });
+
+        await visita.update({ 
+            estado: 'CANCELADA',
+            resultadoSeguimiento: `[CANCELADA]: ${motivo}` 
+        });
+
+        res.json({ message: 'Visita cancelada correctamente' });
+    } catch (error: any) {
+        res.status(500).json({ message: 'Error al cancelar', error: error.message });
+    }
+};
+
+// 5. EXPORTAR EXCEL
 export const exportarSeguimientoExcel = async (req: Request, res: Response) => {
     try {
         const { mes, anio, estado } = req.query;
-        
         let whereClause: any = {};
         
-        // Filtro Fecha
         if (mes && anio) {
             const fechaInicio = new Date(Number(anio), Number(mes) - 1, 1);
             const fechaFin = new Date(Number(anio), Number(mes), 0, 23, 59, 59);
@@ -154,7 +164,6 @@ export const exportarSeguimientoExcel = async (req: Request, res: Response) => {
             whereClause.fechaProgramada = { [Op.between]: [fechaInicio, fechaFin] };
         }
 
-        // Filtro Estado
         if (estado && estado !== 'TODOS') {
             whereClause.estado = estado;
         } else {
@@ -163,15 +172,10 @@ export const exportarSeguimientoExcel = async (req: Request, res: Response) => {
 
         const visitas = await Visita.findAll({
             where: whereClause,
-            include: [
-                { model: Cliente, as: 'cliente' },
-                { model: Propiedad, as: 'propiedad' },
-                { model: Usuario, as: 'asesor' }
-            ],
+            include: ['cliente', 'propiedad', 'asesor'],
             order: [['fechaProgramada', 'ASC']]
         });
 
-        // Crear Excel
         const workbook = new ExcelJS.Workbook();
         const sheet = workbook.addWorksheet('Seguimiento');
         
@@ -179,7 +183,6 @@ export const exportarSeguimientoExcel = async (req: Request, res: Response) => {
             { header: 'Fecha', key: 'fecha', width: 15 },
             { header: 'Hora', key: 'hora', width: 10 },
             { header: 'Cliente', key: 'cliente', width: 25 },
-            { header: 'Tipo', key: 'tipo', width: 15 },
             { header: 'Propiedad', key: 'propiedad', width: 30 },
             { header: 'Asesor', key: 'asesor', width: 20 },
             { header: 'Estado', key: 'estado', width: 15 },
@@ -192,8 +195,7 @@ export const exportarSeguimientoExcel = async (req: Request, res: Response) => {
                 fecha: fechaObj.toLocaleDateString(),
                 hora: fechaObj.toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'}),
                 cliente: v.cliente?.nombre || 'N/A',
-                tipo: v.cliente?.tipo || 'N/A',
-                propiedad: `${v.propiedad?.tipo} - ${v.propiedad?.ubicacion}`,
+                propiedad: v.propiedad ? `${v.propiedad.tipo} - ${v.propiedad.ubicacion}` : 'N/A',
                 asesor: v.asesor?.nombre || 'N/A',
                 estado: v.estado,
                 resultado: v.resultadoSeguimiento || 'Sin informe'
@@ -201,7 +203,7 @@ export const exportarSeguimientoExcel = async (req: Request, res: Response) => {
         });
 
         res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-        res.setHeader('Content-Disposition', `attachment; filename=Seguimiento_${mes || 'Anual'}_${anio}.xlsx`);
+        res.setHeader('Content-Disposition', `attachment; filename=Seguimiento.xlsx`);
         await workbook.xlsx.write(res);
         res.end();
 
