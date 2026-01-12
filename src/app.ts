@@ -16,6 +16,7 @@ import './models/Seguimiento';
 import Usuario from './models/Usuario'; 
 import './models/SolicitudPermiso';
 import './models/Notificacion';
+import './models/Requerimiento'; 
 
 import { definirAsociaciones } from './models/Asociaciones';
 
@@ -29,8 +30,8 @@ import interesRoutes from './routes/interesRoutes';
 import operacionRoutes from './routes/operacionRoutes';
 import visitaRoutes from './routes/visitaRoutes';
 import seguimientoRoutes from './routes/seguimientoRoutes';
-// 🟢 1. IMPORTAR LA RUTA DE CUMPLEAÑOS
 import cumpleanosRoutes from './routes/cumpleanosRoutes';
+import requerimientoRoutes from './routes/requerimientoRoutes';
 
 dotenv.config();
 
@@ -55,8 +56,8 @@ app.use('/api/operaciones', operacionRoutes);
 app.use('/api/visitas', visitaRoutes);
 app.use('/api/seguimientos', seguimientoRoutes);
 app.use('/api/admin/dashboard', dashboardRoutes);
-// 🟢 2. USAR LA RUTA
 app.use('/api/admin/cumpleanos', cumpleanosRoutes);
+app.use('/api/requerimientos', requerimientoRoutes);
 
 // --- FUNCIÓN DE EMERGENCIA ---
 const crearUsuariosPorDefecto = async () => {
