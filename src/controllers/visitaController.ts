@@ -79,36 +79,47 @@ export const obtenerVisitas = async (req: Request, res: Response) => {
     }
 };
 
-// 3. ACTUALIZAR VISITA (Finalizar)
+// 3. VISITA (Finalizar o Reprogramar)
 export const actualizarVisita = async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
+        // Recibimos datos de la visita Y datos potenciales del cliente
         const { 
             estado, 
             resultadoSeguimiento,
-            dni, email, direccion, fechaNacimiento, ocupacion 
+            fechaProgramada, // 👈 IMPORTANTE: Para reprogramar
+            comentariosPrevios, // 👈 IMPORTANTE: Para actualizar notas al reprogramar
+            // Datos para completar el perfil del cliente
+            dni, 
+            email, 
+            direccion, 
+            fechaNacimiento, 
+            ocupacion 
         } = req.body;
 
         const visita = await Visita.findByPk(id);
         if (!visita) return res.status(404).json({ message: 'Visita no encontrada' });
 
+        // Si se está completando la visita (Acción de Finalizar)
         if (estado === 'COMPLETADA') {
             const cliente = await Cliente.findByPk(visita.clienteId);
             
             if (cliente) {
-                // Si es PROSPECTO, validamos datos obligatorios para convertirlo
+                // Si sigue siendo PROSPECTO, validamos que vengan los datos obligatorios
                 if (cliente.getDataValue('tipo') === 'PROSPECTO') {
                     if (!dni || !email) {
                         return res.status(400).json({ 
                             message: '⚠️ Acción Bloqueada: Para finalizar la visita de un Prospecto, debe ingresar DNI y Email obligatoriamente.' 
                         });
                     }
+
+                    // De Prospecto a Cliente
                     console.log(`🚀 Actualizando Prospecto ${cliente.getDataValue('nombre')} a CLIENTE...`);
                     await cliente.update({
                         dni, email, direccion, fechaNacimiento, ocupacion, tipo: 'CLIENTE'
                     });
                 } else {
-                    // Si ya es CLIENTE, actualizamos datos si vienen nuevos
+                    // Si ya es CLIENTE, igual permitimos actualizar datos si enviaron algo nuevo
                     if (dni || email || direccion) {
                         await cliente.update({ dni, email, direccion, fechaNacimiento, ocupacion });
                     }
@@ -116,11 +127,16 @@ export const actualizarVisita = async (req: Request, res: Response) => {
             }
         }
 
+        // Actualizar datos de la visita
         if (estado) visita.estado = estado;
         if (resultadoSeguimiento) visita.resultadoSeguimiento = resultadoSeguimiento;
+        
+        // Lógica de Reprogramación
+        if (fechaProgramada) visita.fechaProgramada = fechaProgramada;
+        if (comentariosPrevios) visita.comentariosPrevios = comentariosPrevios;
 
         await visita.save();
-        res.json({ message: 'Visita actualizada y datos procesados', visita });
+        res.json({ message: 'Visita actualizada correctamente', visita });
 
     } catch (error) {
         console.error(error);
