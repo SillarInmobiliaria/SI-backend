@@ -32,6 +32,7 @@ import visitaRoutes from './routes/visitaRoutes';
 import seguimientoRoutes from './routes/seguimientoRoutes';
 import cumpleanosRoutes from './routes/cumpleanosRoutes';
 import requerimientoRoutes from './routes/requerimientoRoutes';
+import agenteRoutes from './routes/agenteRoutes';
 
 dotenv.config();
 
@@ -58,6 +59,7 @@ app.use('/api/seguimientos', seguimientoRoutes);
 app.use('/api/admin/dashboard', dashboardRoutes);
 app.use('/api/admin/cumpleanos', cumpleanosRoutes);
 app.use('/api/requerimientos', requerimientoRoutes);
+app.use('/api/agentes', agenteRoutes);
 
 // --- FUNCIÓN DE EMERGENCIA ---
 const crearUsuariosPorDefecto = async () => {
