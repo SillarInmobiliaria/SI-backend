@@ -21,6 +21,26 @@ export const createAgente = async (req: Request, res: Response) => {
     }
 };
 
+// CARGA MASIVA DESDE EXCEL (NUEVO)
+export const cargaMasivaAgentes = async (req: Request, res: Response) => {
+    try {
+        const agentes = req.body; // Recibimos un ARRAY de agentes
+        
+        if (!Array.isArray(agentes)) {
+            res.status(400).json({ message: 'El formato debe ser una lista de agentes' });
+            return;
+        }
+
+        // bulkCreate inserta todo de una sola vez (es muy rápido)
+        await Agente.bulkCreate(agentes);
+
+        res.json({ message: `Se importaron ${agentes.length} agentes correctamente.` });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Error en la carga masiva' });
+    }
+};
+
 // Cambiar estado (El botón de tachar/rojo)
 export const toggleEstadoAgente = async (req: Request, res: Response) => {
     try {
@@ -28,7 +48,7 @@ export const toggleEstadoAgente = async (req: Request, res: Response) => {
         const agente = await Agente.findByPk(id);
         if (!agente) {
              res.status(404).json({ message: 'Agente no encontrado' });
-             return; // Importante el return
+             return; 
         }
 
         // Si es ALIADO pasa a OBSERVADO, y viceversa
