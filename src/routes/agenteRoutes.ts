@@ -6,7 +6,7 @@ const router = Router();
 
 router.get('/', authMiddleware, getAgentes);
 router.post('/', authMiddleware, createAgente);
-router.post('/masiva', authMiddleware, cargaMasivaAgentes); // <--- RUTA NUEVA
+router.post('/masiva', authMiddleware, cargaMasivaAgentes);
 router.put('/:id/estado', authMiddleware, toggleEstadoAgente);
 router.delete('/:id', authMiddleware, deleteAgente);
 
