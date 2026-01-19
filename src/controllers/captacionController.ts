@@ -1,13 +1,13 @@
 import { Request, Response } from 'express';
 import Captacion from '../models/Captacion';
 
-// Obtener todas (Ordenadas por Fecha de Captación DESC)
+// Obtener todas
 export const getCaptaciones = async (req: Request, res: Response) => {
     try {
         const captaciones = await Captacion.findAll({ 
             order: [
-                ['fechaCaptacion', 'DESC'], // <--- CAMBIO IMPORTANTE: Ordenar por fecha real
-                ['createdAt', 'DESC']       // En caso de empate, por fecha de creación
+                ['fechaCaptacion', 'DESC'], 
+                ['createdAt', 'DESC']
             ] 
         });
         res.json(captaciones);
@@ -27,7 +27,19 @@ export const createCaptacion = async (req: Request, res: Response) => {
     }
 };
 
-// Carga Masiva (Excel)
+// Editar
+export const updateCaptacion = async (req: Request, res: Response) => {
+    try {
+        const { id } = req.params;
+        await Captacion.update(req.body, { where: { id } });
+        res.json({ message: 'Captación actualizada correctamente' });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Error al actualizar captación' });
+    }
+};
+
+// Carga Masiva
 export const cargaMasivaCaptaciones = async (req: Request, res: Response) => {
     try {
         const datos = req.body;
