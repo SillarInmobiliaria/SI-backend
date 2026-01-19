@@ -8,8 +8,9 @@ class Agente extends Model {
     public celular1!: string;
     public celular2!: string;
     public celular3!: string;
+    public link!: string;
     public datosAdicionales!: string;
-    public estado!: 'ALIADO' | 'OBSERVADO'; // ALIADO = Bien, OBSERVADO = Cuidado
+    public estado!: 'ALIADO' | 'OBSERVADO'; 
 }
 
 Agente.init({
@@ -36,6 +37,10 @@ Agente.init({
     },
     celular3: {
         type: DataTypes.STRING,
+        allowNull: true,
+    },
+    link: {
+        type: DataTypes.TEXT, 
         allowNull: true,
     },
     datosAdicionales: {
