@@ -1,52 +1,62 @@
 import { Request, Response } from 'express';
 import { Op } from 'sequelize';
-import db from '../config/db'; // Tu conexión a BD
+import db from '../config/db'; 
 import Cliente from '../models/Cliente';
 import Propietario from '../models/Propietario';
+import Cartera from '../models/Cartera';
 import ExcelJS from 'exceljs';
 
-// --- HELPER PARA OBTENER MES ACTUAL SI NO SE ENVÍA ---
-const getMesActual = () => new Date().getMonth() + 1; // Enero es 0 en JS, por eso +1
+const getMesActual = () => new Date().getMonth() + 1; 
 
-// 1. OBTENER CUMPLEAÑEROS (POR MES)
+// 1. OBTENER CUMPLEAÑEROS
 export const obtenerCumpleanos = async (req: Request, res: Response) => {
     try {
-        // Recibimos el mes por query (1 = Enero, 12 = Diciembre)
         const mes = req.query.mes ? Number(req.query.mes) : getMesActual();
 
-        // VALIDACIÓN BÁSICA
         if (isNaN(mes) || mes < 1 || mes > 12) {
             return res.status(400).json({ message: 'Mes inválido (1-12)' });
         }
 
-        // 🧠 LÓGICA SQL: "EXTRACT(MONTH FROM fecha)"
-        // Esto ignora el año y solo compara el mes. Funciona en Postgres.
+        // LÓGICA SQL
         const whereCumple = db.where(
             db.fn('EXTRACT', db.literal('MONTH FROM "fechaNacimiento"')),
             mes
         );
 
-        // BUSCAMOS EN PARALELO
-        const [clientes, propietarios] = await Promise.all([
+        const [clientesViejos, carteraNuevos, propietarios] = await Promise.all([
             Cliente.findAll({ 
                 where: { 
-                    [Op.and]: [
-                        whereCumple,
-                        { activo: true } // Opcional: Solo activos
-                    ]
+                    [Op.and]: [ whereCumple, { activo: true } ]
                 },
-                attributes: ['id', 'nombre', 'dni', 'fechaNacimiento', 'telefono1', 'email'] // Solo lo necesario
+                attributes: ['id', 'nombre', 'dni', 'fechaNacimiento', 'telefono1', 'email']
             }),
+            
+            // 2. Cartera de Clientes
+            Cartera.findAll({
+                where: whereCumple,
+                attributes: [
+                    'id', 
+                    ['nombreCompleto', 'nombre'],
+                    'documento',
+                    'fechaNacimiento', 
+                    ['telefono', 'telefono1'],    
+                    'email'
+                ]
+            }),
+
+            // 3. Propietarios
             Propietario.findAll({ 
-                where: whereCumple, // Los propietarios no suelen tener flag 'activo', pero ajusta si lo tienen
+                where: whereCumple,
                 attributes: ['id', 'nombre', 'dni', 'fechaNacimiento', 'celular1', 'email']
             })
         ]);
 
+        const todosLosClientes = [...clientesViejos, ...carteraNuevos];
+
         res.json({
             mes,
-            total: clientes.length + propietarios.length,
-            clientes,
+            total: todosLosClientes.length + propietarios.length,
+            clientes: todosLosClientes, // Enviamos la lista combinada
             propietarios
         });
 
@@ -67,41 +77,43 @@ export const exportarExcelCumpleanos = async (req: Request, res: Response) => {
             mes
         );
 
-        // Traemos todo
-        const [clientes, propietarios] = await Promise.all([
+        const [clientes, cartera, propietarios] = await Promise.all([
             Cliente.findAll({ where: { [Op.and]: [whereCumple, { activo: true }] } }),
+            Cartera.findAll({ where: whereCumple }),
             Propietario.findAll({ where: whereCumple })
         ]);
 
-        // PREPARAMOS EL EXCEL
         const workbook = new ExcelJS.Workbook();
         const sheet = workbook.addWorksheet(`Cumpleañeros ${nombresMeses[mes-1]}`);
 
         sheet.columns = [
             { header: 'Día', key: 'dia', width: 8 },
-            { header: 'Tipo', key: 'tipo', width: 12 }, // Cliente o Propietario
+            { header: 'Tipo', key: 'tipo', width: 12 },
             { header: 'Nombre Completo', key: 'nombre', width: 30 },
             { header: 'Celular', key: 'celular', width: 15 },
-            { header: 'Edad a Cumplir', key: 'edad', width: 15 }, // Calculado
+            { header: 'Edad a Cumplir', key: 'edad', width: 15 },
             { header: 'Email', key: 'email', width: 25 },
         ];
 
-        // Función para procesar y añadir filas
         const procesarDatos = (lista: any[], tipo: string) => {
             lista.forEach(persona => {
                 const nac = new Date(persona.fechaNacimiento);
                 const hoy = new Date();
-                const edad = hoy.getFullYear() - nac.getFullYear(); // Edad aproximada que cumplirán este año
-                
-                // Ajuste visual para el día (sumamos 1 porque a veces UTC lo mueve)
-                // O mejor usamos getUTCDate() para ser exactos con lo guardado
+                const edad = hoy.getFullYear() - nac.getFullYear(); 
                 const dia = nac.getUTCDate(); 
+                let nombre = persona.nombre;
+                let telefono = persona.telefono1 || persona.celular1;
+
+                if (tipo === 'Cartera (Cliente)') {
+                    nombre = persona.nombreCompleto;
+                    telefono = persona.telefono;
+                }
 
                 sheet.addRow({
                     dia: dia,
                     tipo: tipo,
-                    nombre: persona.nombre,
-                    celular: tipo === 'Cliente' ? persona.telefono1 : persona.celular1,
+                    nombre: nombre,
+                    celular: telefono,
                     edad: edad,
                     email: persona.email || '-'
                 });
@@ -109,11 +121,8 @@ export const exportarExcelCumpleanos = async (req: Request, res: Response) => {
         };
 
         procesarDatos(clientes, 'Cliente');
+        procesarDatos(cartera, 'Cartera (Cliente)');
         procesarDatos(propietarios, 'Propietario');
-
-        // Ordenar por día (Columna 1)
-        // ExcelJS no tiene sort nativo fácil, pero como es reporte, así está bien.
-        // Si quieres ordenarlos, habría que unir los arrays antes de recorrerlos.
 
         res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
         res.setHeader('Content-Disposition', `attachment; filename=Cumpleanos_${nombresMeses[mes-1]}.xlsx`);
