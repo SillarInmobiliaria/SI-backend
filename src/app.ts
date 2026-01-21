@@ -35,6 +35,7 @@ import requerimientoRoutes from './routes/requerimientoRoutes';
 import agenteRoutes from './routes/agenteRoutes';
 import captacionRoutes from './routes/captacionRoutes';
 import cierreRoutes from './routes/cierreRoutes';
+import carteraRoutes from './routes/carteraRoutes';
 
 dotenv.config();
 
@@ -68,6 +69,7 @@ app.use('/api/requerimientos', requerimientoRoutes);
 app.use('/api/agentes', agenteRoutes);
 app.use('/api/captaciones', captacionRoutes);
 app.use('/api/cierres', cierreRoutes);
+app.use('/api/cartera', carteraRoutes);
 
 // --- FUNCIÓN DE EMERGENCIA ---
 const crearUsuariosPorDefecto = async () => {
