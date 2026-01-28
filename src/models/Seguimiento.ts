@@ -11,10 +11,9 @@ Seguimiento.init(
       primaryKey: true,
     },
     fecha: {
-      type: DataTypes.DATE, // Cambiado a DATE para aceptar hora si llega
+      type: DataTypes.DATE,
       allowNull: false,
     },
-    // 👇 NUEVOS CAMPOS QUE ENVÍA TU FRONTEND
     comentario: {
       type: DataTypes.TEXT,
       allowNull: false,

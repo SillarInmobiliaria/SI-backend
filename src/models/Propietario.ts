@@ -15,9 +15,9 @@ Propietario.init(
       allowNull: false,
     },
     dni: {
-      type: DataTypes.STRING(8), // Estricto: 8 caracteres
+      type: DataTypes.STRING(8),
       allowNull: false,
-      unique: true, // ⚠️ Si intentas crear un DNI que ya existe, dará error
+      unique: true, // Si intentas crear un DNI que ya existe, dará error
     },
     fechaNacimiento: {
       type: DataTypes.DATEONLY,
@@ -32,7 +32,7 @@ Propietario.init(
       allowNull: true,
     },
     celular1: {
-      type: DataTypes.STRING(9), // Estricto: 9 caracteres
+      type: DataTypes.STRING(9),
       allowNull: false,
     },
     celular2: {
