@@ -3,7 +3,6 @@ import jwt from 'jsonwebtoken';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'sillar_secreto_super_seguro';
 
-// 1. TU MIDDLEWARE ACTUAL
 export const authMiddleware = (req: Request, res: Response, next: NextFunction): void => {
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1];
@@ -15,7 +14,7 @@ export const authMiddleware = (req: Request, res: Response, next: NextFunction):
 
   try {
     const decoded = jwt.verify(token, JWT_SECRET);
-    (req as any).user = decoded; // Guardamos datos del usuario
+    (req as any).user = decoded;
     next();
   } catch (error) {
     res.status(403).json({ message: 'Token inválido o expirado.' });

@@ -58,7 +58,7 @@ export const obtenerClientes = async (req: Request, res: Response) => {
     const usuario = (req as any).user;
     let whereClause: any = {};
 
-    // El Asesor ve solo los suyos (activos o suspendidos). El Admin ve TODO.
+    // El Asesor ve solo los suyos (activos o suspendidos)
     if (usuario.rol !== 'ADMIN') {
         whereClause = { usuarioId: usuario.id };
     }

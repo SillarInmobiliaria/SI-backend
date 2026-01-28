@@ -4,7 +4,7 @@ import { Op } from 'sequelize';
 import Cartera from '../models/Cartera'; 
 import Cliente from '../models/Cliente'; 
 
-// 1. BUSCADOR INTELIGENTE (Autocompletado)
+// 1. BUSCADOR INTELIGENTE
 export const buscarParaAutocompletar = async (req: Request, res: Response) => {
     try {
         const { query } = req.query;

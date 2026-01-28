@@ -58,7 +58,6 @@ export const crearPropiedad = async (req: Request, res: Response) => {
         let datosPropiedad = {
             ...resto,
             precio: limpiarNumero(rawBody.precio),
-            // Guardamos mantenimiento
             mantenimiento: limpiarNumero(rawBody.mantenimiento),
             
             area: limpiarNumero(rawBody.area),
@@ -175,7 +174,6 @@ export const updatePropiedad = async (req: Request, res: Response) => {
 
         const updates: any = {};
 
-        // 🟢 NUEVO: Incluimos mantenimiento en la actualización
         ['precio', 'mantenimiento', 'area', 'areaConstruida', 'habitaciones', 'banos', 'cocheras', 'comision']
             .forEach(f => { if (raw[f] !== undefined) updates[f] = limpiarNumero(raw[f]); });
         

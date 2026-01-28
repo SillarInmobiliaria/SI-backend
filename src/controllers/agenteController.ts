@@ -21,17 +21,17 @@ export const createAgente = async (req: Request, res: Response) => {
     }
 };
 
-// CARGA MASIVA DESDE EXCEL (NUEVO)
+// CARGA MASIVA DESDE EXCEL
 export const cargaMasivaAgentes = async (req: Request, res: Response) => {
     try {
-        const agentes = req.body; // Recibimos un ARRAY de agentes
+        const agentes = req.body;
         
         if (!Array.isArray(agentes)) {
             res.status(400).json({ message: 'El formato debe ser una lista de agentes' });
             return;
         }
 
-        // bulkCreate inserta todo de una sola vez (es muy rápido)
+        // bulkCreate inserta todo de una sola vez
         await Agente.bulkCreate(agentes);
 
         res.json({ message: `Se importaron ${agentes.length} agentes correctamente.` });
@@ -41,7 +41,7 @@ export const cargaMasivaAgentes = async (req: Request, res: Response) => {
     }
 };
 
-// Cambiar estado (El botón de tachar/rojo)
+// Cambiar estado
 export const toggleEstadoAgente = async (req: Request, res: Response) => {
     try {
         const { id } = req.params;

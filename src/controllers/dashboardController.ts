@@ -50,7 +50,6 @@ export const getDashboardStats = async (req: Request, res: Response) => {
         const totalVisitas = await Visita.count({ where: { ...whereAnio, estado: 'COMPLETADA' } });
 
         // --- B. LÓGICA DE LA GRÁFICA (SEGÚN EL MODO) ---
-        // CORRECCIÓN AQUÍ: Definimos el tipo explícito para evitar el error "implicitly has an 'any[]' type"
         let rangos: { label: string, start: Date, end: Date }[] = [];
         const hoy = new Date();
 
@@ -81,7 +80,7 @@ export const getDashboardStats = async (req: Request, res: Response) => {
         // MODO 3: SEMANAL (Lun-Dom de la semana actual)
         else if (mode === 'SEMANAL') {
             const diaSemana = hoy.getDay(); // 0 (Dom) - 6 (Sab)
-            const diff = hoy.getDate() - diaSemana + (diaSemana === 0 ? -6 : 1); // Ajuste para Lunes
+            const diff = hoy.getDate() - diaSemana + (diaSemana === 0 ? -6 : 1);
             const lunes = new Date(hoy.setDate(diff));
             lunes.setHours(0,0,0,0);
 

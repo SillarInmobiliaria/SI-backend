@@ -38,7 +38,7 @@ export const obtenerVisitas = async (req: Request, res: Response) => {
     try {
         const usuario = (req as any).user;
 
-        // 🛡️ PROTECCIÓN CONTRA CAÍDAS (Fix del Error 500)
+        // PROTECCIÓN CONTRA CAÍDAS (Fix del Error 500)
         if (!usuario) {
             return res.status(401).json({ message: 'No autorizado. Token inválido o sesión expirada.' });
         }
@@ -83,13 +83,11 @@ export const obtenerVisitas = async (req: Request, res: Response) => {
 export const actualizarVisita = async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
-        // Recibimos datos de la visita Y datos potenciales del cliente
         const { 
             estado, 
             resultadoSeguimiento,
-            fechaProgramada, // 👈 IMPORTANTE: Para reprogramar
-            comentariosPrevios, // 👈 IMPORTANTE: Para actualizar notas al reprogramar
-            // Datos para completar el perfil del cliente
+            fechaProgramada,
+            comentariosPrevios,
             dni, 
             email, 
             direccion, 

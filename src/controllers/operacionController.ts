@@ -15,7 +15,7 @@ export const crearOperacion = async (req: Request, res: Response) => {
 export const obtenerOperaciones = async (req: Request, res: Response) => {
   try {
     const operaciones = await Operacion.findAll({
-      include: [Propiedad, Cliente] // Traemos datos de la casa y el cliente
+      include: [Propiedad, Cliente]
     });
     res.json(operaciones);
   } catch (error: any) {

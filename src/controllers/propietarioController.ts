@@ -6,17 +6,17 @@ export const crearPropietario = async (req: Request, res: Response) => {
   try {
     const usuario = (req as any).user;
     
-    console.log("Intentando crear propietario con datos:", req.body); // 👈 PARA DEPURAR
+    console.log("Intentando crear propietario con datos:", req.body);
 
     const nuevoPropietario = await Propietario.create({
       ...req.body,
-      usuarioId: usuario.id, // Asignamos al asesor logueado
+      usuarioId: usuario.id,
       activo: true
     });
     
     res.status(201).json(nuevoPropietario);
   } catch (error: any) {
-    console.error("❌ Error CRÍTICO al crear propietario:", error); // 👈 MIRA TU TERMINAL SI FALLA
+    console.error("❌ Error CRÍTICO al crear propietario:", error);
     res.status(500).json({ 
         message: 'Error al crear propietario', 
         error: error.message || error 

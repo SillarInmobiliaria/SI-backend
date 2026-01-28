@@ -32,19 +32,18 @@ export const createUsuario = async (req: Request, res: Response): Promise<void> 
     const nuevoUsuario = await Usuario.create({
       nombre,
       email,
-      password: passwordTemporal, // El modelo la encriptará automáticamente
+      password: passwordTemporal,
       rol,
-      mustChangePassword: true, // Obligamos a que la cambie
+      mustChangePassword: true,
       activo: true
     });
 
-    // RESPUESTA: Devolvemos la contraseña temporal para que el Admin se la entregue al usuario
     res.status(201).json({ 
       message: 'Usuario creado con éxito.',
       credenciales: {
         nombre: nuevoUsuario.nombre,
         email: nuevoUsuario.email,
-        passwordTemporal: passwordTemporal, // <--- IMPORTANTE: Mostrar esto en el frontend
+        passwordTemporal: passwordTemporal,
         rol: (nuevoUsuario as any).rol
       }
     });
@@ -60,9 +59,8 @@ export const createUsuario = async (req: Request, res: Response): Promise<void> 
 export const getUsuarios = async (req: Request, res: Response) => {
     try {
         const usuarios = await Usuario.findAll({
-            // Traemos solo lo necesario (sin password) + el motivo de suspensión
             attributes: ['id', 'nombre', 'email', 'rol', 'activo', 'createdAt', 'motivoSuspension'],
-            order: [['nombre', 'ASC']] // 👈 Orden Alfabético
+            order: [['nombre', 'ASC']]
         });
         res.json(usuarios);
     } catch (error) {
@@ -75,7 +73,7 @@ export const getUsuarios = async (req: Request, res: Response) => {
 export const toggleEstadoUsuario = async (req: Request, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
-    const { activo, motivo } = req.body; // Recibimos el nuevo estado y el motivo (opcional)
+    const { activo, motivo } = req.body;
 
     const usuario = await Usuario.findByPk(id);
 
@@ -106,7 +104,7 @@ export const toggleEstadoUsuario = async (req: Request, res: Response): Promise<
   }
 };
 
-// 4. ELIMINAR USUARIO (Acción Definitiva)
+// 4. ELIMINAR USUARIO
 
 export const deleteUsuario = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -118,7 +116,7 @@ export const deleteUsuario = async (req: Request, res: Response): Promise<void> 
       return;
     }
 
-    await usuario.destroy(); // Borrado físico de la base de datos
+    await usuario.destroy();
     res.json({ message: 'Usuario eliminado correctamente' });
 
   } catch (error) {
@@ -130,10 +128,9 @@ export const deleteUsuario = async (req: Request, res: Response): Promise<void> 
 
 export const getNotificaciones = async (req: Request, res: Response): Promise<void> => {
     try {
-        // Traemos las alertas ordenadas por fecha (las nuevas primero)
         const notificaciones = await Notificacion.findAll({ 
             order: [['createdAt', 'DESC']],
-            limit: 50 // Opcional: limitar para no traer miles
+            limit: 50
         });
         res.json(notificaciones);
     } catch (error) {

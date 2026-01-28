@@ -16,7 +16,6 @@ export const getCaptaciones = async (req: Request, res: Response) => {
     }
 };
 
-// Crear una
 export const createCaptacion = async (req: Request, res: Response) => {
     try {
         const captacion = await Captacion.create(req.body);

@@ -14,7 +14,6 @@ export const crearInteres = async (req: Request, res: Response) => {
         });
 
         if (existente) {
-            // Si ya existe, actualizamos la nota
             existente.nota = nota;
             await existente.save();
             return res.json(existente);
