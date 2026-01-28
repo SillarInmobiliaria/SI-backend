@@ -4,8 +4,6 @@ import { verificarToken, esAdmin } from '../middleware/authMiddleware';
 
 const router = Router();
 
-// RUTA BASE: /api/admin/cumpleanos
-
 router.get('/', verificarToken, esAdmin, obtenerCumpleanos);
 
 router.get('/excel', verificarToken, esAdmin, exportarExcelCumpleanos);
