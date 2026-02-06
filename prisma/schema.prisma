@@ -1,0 +1,438 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model PropiedadPropietario {
+  createdAt     DateTime     @db.Timestamptz(6)
+  updatedAt     DateTime     @db.Timestamptz(6)
+  PropiedadId   String       @db.Uuid
+  PropietarioId String       @db.Uuid
+  propiedades   propiedades  @relation(fields: [PropiedadId], references: [id], onDelete: Cascade)
+  propietarios  propietarios @relation(fields: [PropietarioId], references: [id], onDelete: Cascade)
+
+  @@id([PropiedadId, PropietarioId])
+}
+
+model agentes {
+  id               String               @id @db.Uuid
+  nombre           String               @db.VarChar(255)
+  inmobiliaria     String?              @db.VarChar(255)
+  celular1         String?              @db.VarChar(255)
+  celular2         String?              @db.VarChar(255)
+  celular3         String?              @db.VarChar(255)
+  link             String?
+  datosAdicionales String?
+  estado           enum_agentes_estado? @default(ALIADO)
+  createdAt        DateTime             @db.Timestamptz(6)
+  updatedAt        DateTime             @db.Timestamptz(6)
+}
+
+model captaciones {
+  id              String                     @id @db.Uuid
+  fechaCaptacion  DateTime?                  @db.Date
+  fuente          String?                    @db.VarChar(255)
+  inmueble        String?                    @db.VarChar(255)
+  tipoOperacion   String?                    @db.VarChar(255)
+  relacion        enum_captaciones_relacion? @default(PROPIETARIO)
+  nombre          String?                    @db.VarChar(255)
+  celular1        String?                    @db.VarChar(255)
+  celular2        String?                    @db.VarChar(255)
+  ubicacion       String?
+  distrito        String?                    @db.VarChar(255)
+  moneda          enum_captaciones_moneda?   @default(USD)
+  precio          Decimal?                   @default(0) @db.Decimal(20, 2)
+  at              Decimal?                   @default(0) @db.Decimal(20, 2)
+  ac              Decimal?                   @default(0) @db.Decimal(20, 2)
+  precioM2        Decimal?                   @default(0) @db.Decimal(20, 2)
+  caracteristicas String?
+  antiguedad      String?                    @db.VarChar(255)
+  situacion       String?                    @db.VarChar(255)
+  observaciones   String?
+  createdAt       DateTime                   @db.Timestamptz(6)
+  updatedAt       DateTime                   @db.Timestamptz(6)
+}
+
+model cartera_clientes {
+  id              Int                           @id @default(autoincrement())
+  nombreCompleto  String                        @db.VarChar(255)
+  documento       String?                       @db.VarChar(255)
+  telefono        String                        @db.VarChar(255)
+  telefono2       String?                       @db.VarChar(255)
+  email           String?                       @db.VarChar(255)
+  direccion       String?                       @db.VarChar(255)
+  fechaNacimiento DateTime?                     @db.Date
+  profesion       String?                       @db.VarChar(255)
+  fechaRegistro   DateTime?                     @db.Date
+  tipo            enum_cartera_clientes_tipo?   @default(INQUILINO)
+  estado          enum_cartera_clientes_estado? @default(ACTIVO)
+  createdAt       DateTime                      @db.Timestamptz(6)
+  updatedAt       DateTime                      @db.Timestamptz(6)
+}
+
+model cierres {
+  id                       String                     @id @db.Uuid
+  tipoOperacion            enum_cierres_tipoOperacion
+  fechaCierre              DateTime?                  @db.Date
+  propiedadId              String?                    @db.VarChar(255)
+  clienteId                String?                    @db.VarChar(255)
+  asesorId                 String?                    @db.VarChar(255)
+  notaria                  String?                    @db.VarChar(255)
+  ubicacionNotaria         String?                    @db.VarChar(255)
+  observaciones            String?
+  estado                   enum_cierres_estado?       @default(PENDIENTE)
+  partidaRegistral         String?                    @db.VarChar(255)
+  tipoFirma                String?                    @db.VarChar(255)
+  moneda                   enum_cierres_moneda?       @default(PEN)
+  montoRenta               Decimal?                   @default(0) @db.Decimal(12, 2)
+  fechaInicio              DateTime?                  @db.Date
+  fechaTermino             DateTime?                  @db.Date
+  plazoContrato            String?                    @db.VarChar(255)
+  diasGracia               Int?                       @default(0)
+  diasTolerancia           Int?                       @default(0)
+  moraDiaria               Decimal?                   @default(0) @db.Decimal(10, 2)
+  penalidadResolucion      Decimal?                   @default(0) @db.Decimal(10, 2)
+  garantia                 Decimal?                   @default(0) @db.Decimal(12, 2)
+  mesAdelantado            Decimal?                   @default(0) @db.Decimal(12, 2)
+  banco                    String?                    @db.VarChar(255)
+  numeroCuenta             String?                    @db.VarChar(255)
+  cci                      String?                    @db.VarChar(255)
+  titularCuenta            String?                    @db.VarChar(255)
+  tieneInventario          Boolean?                   @default(false)
+  permiteMascotas          Boolean?                   @default(false)
+  incluyeCochera           Boolean?                   @default(false)
+  mantenimientoIncluido    Boolean?                   @default(false)
+  direccionClienteContrato String?                    @db.VarChar(255)
+  datosRepresentante       String?
+  numeroEscritura          String?                    @db.VarChar(255)
+  gastosNotariales         Decimal?                   @default(0) @db.Decimal(12, 2)
+  gastosRegistrales        Decimal?                   @default(0) @db.Decimal(12, 2)
+  fechaEntrega             DateTime?                  @db.Date
+  montoVenta               Decimal?                   @default(0) @db.Decimal(15, 2)
+  impuestoAlcabala         Decimal?                   @default(0) @db.Decimal(12, 2)
+  impuestoRenta            Decimal?                   @default(0) @db.Decimal(12, 2)
+  formaPago                String?                    @db.VarChar(255)
+  etapaVenta               String?                    @db.VarChar(255)
+  montoArras               Decimal?                   @default(0) @db.Decimal(12, 2)
+  bancoFinanciamiento      String?                    @db.VarChar(255)
+  cuotaInicial             Decimal?                   @default(0) @db.Decimal(15, 2)
+  createdAt                DateTime                   @db.Timestamptz(6)
+  updatedAt                DateTime                   @db.Timestamptz(6)
+}
+
+model clientes {
+  id              String             @id @db.Uuid
+  nombre          String             @db.VarChar(255)
+  dni             String?            @unique @db.VarChar(20)
+  fechaNacimiento DateTime?          @db.Date
+  direccion       String?            @db.VarChar(255)
+  email           String?            @db.VarChar(255)
+  telefono1       String             @db.VarChar(20)
+  telefono2       String?            @db.VarChar(20)
+  estadoCivil     String?            @db.VarChar(255)
+  ocupacion       String?            @db.VarChar(255)
+  fechaAlta       DateTime?          @db.Date
+  usuarioId       String?            @db.Uuid
+  activo          Boolean?           @default(true)
+  createdAt       DateTime           @db.Timestamptz(6)
+  updatedAt       DateTime           @db.Timestamptz(6)
+  tipo            enum_clientes_tipo @default(PROSPECTO)
+  origen          String?            @db.VarChar(255)
+  intereses       intereses[]
+  requerimientos  requerimientos[]
+  seguimientos    seguimientos[]
+  visitas         visitas[]
+}
+
+model intereses {
+  id          String      @id @db.Uuid
+  estado      String?     @default("Pendiente") @db.VarChar(255)
+  nota        String?
+  clienteId   String      @db.Uuid
+  propiedadId String      @db.Uuid
+  createdAt   DateTime    @db.Timestamptz(6)
+  updatedAt   DateTime    @db.Timestamptz(6)
+  clientes    clientes    @relation(fields: [clienteId], references: [id], onDelete: Cascade)
+  propiedades propiedades @relation(fields: [propiedadId], references: [id], onDelete: Cascade)
+}
+
+model notificaciones {
+  id                String   @id @db.Uuid
+  mensaje           String   @db.VarChar(255)
+  tipo              String?  @default("INFO") @db.VarChar(255)
+  leido             Boolean? @default(false)
+  usuarioAfectadoId String?  @db.VarChar(255)
+  createdAt         DateTime @db.Timestamptz(6)
+  updatedAt         DateTime @db.Timestamptz(6)
+}
+
+model operaciones {
+  id             String    @id @db.Uuid
+  tipoGestion    String    @db.VarChar(255)
+  estado         String    @db.VarChar(255)
+  fechaOperacion DateTime  @db.Date
+  fechaContrato  DateTime? @db.Date
+  precioFinal    Decimal   @db.Decimal(10, 2)
+  honorarios     Decimal   @db.Decimal(5, 2)
+  asesor         String    @db.VarChar(255)
+  propiedadId    String    @db.Uuid
+  clienteId      String?   @db.Uuid
+  createdAt      DateTime  @db.Timestamptz(6)
+  updatedAt      DateTime  @db.Timestamptz(6)
+}
+
+model propiedades {
+  id                   String                 @id @db.Uuid
+  tipo                 String                 @db.VarChar(255)
+  modalidad            String                 @db.VarChar(255)
+  ubicacion            String                 @db.VarChar(255)
+  direccion            String?                @db.VarChar(255)
+  precio               Decimal                @db.Decimal(12, 2)
+  moneda               String?                @default("USD") @db.VarChar(255)
+  area                 Float?
+  areaConstruida       Float?
+  habitaciones         Int?
+  banos                Int?
+  cocheras             Int?
+  descripcion          String?
+  detalles             String?
+  fotoPrincipal        String?                @db.VarChar(255)
+  galeria              Json?                  @db.Json
+  videoUrl             String?                @db.VarChar(255)
+  mapaUrl              String?
+  pdfUrl               String?                @db.VarChar(255)
+  link1                String?                @db.VarChar(255)
+  link2                String?                @db.VarChar(255)
+  link3                String?                @db.VarChar(255)
+  link4                String?                @db.VarChar(255)
+  link5                String?                @db.VarChar(255)
+  partidaRegistral     String?                @db.VarChar(255)
+  partidaAdicional     String?                @db.VarChar(255)
+  partidaCochera       String?                @db.VarChar(255)
+  partidaDeposito      String?                @db.VarChar(255)
+  fechaCaptacion       DateTime?              @db.Date
+  inicioContrato       DateTime?              @db.Date
+  finContrato          DateTime?              @db.Date
+  tipoContrato         String?                @db.VarChar(255)
+  comision             Float?
+  testimonio           Boolean?               @default(false)
+  hr                   Boolean?               @default(false)
+  pu                   Boolean?               @default(false)
+  impuestoPredial      Boolean?               @default(false)
+  arbitrios            Boolean?               @default(false)
+  copiaLiteral         Boolean?               @default(false)
+  asesor               String?                @db.VarChar(255)
+  usuarioId            String?                @db.Uuid
+  activo               Boolean?               @default(true)
+  observaciones        String?
+  createdAt            DateTime               @db.Timestamptz(6)
+  updatedAt            DateTime               @db.Timestamptz(6)
+  revision             Boolean?               @default(false)
+  mantenimiento        Decimal?               @db.Decimal(10, 2)
+  PropiedadPropietario PropiedadPropietario[]
+  intereses            intereses[]
+  seguimientos         seguimientos[]
+  visitas              visitas[]
+}
+
+model propietarios {
+  id                   String                 @id @db.Uuid
+  nombre               String                 @db.VarChar(255)
+  dni                  String                 @unique @db.VarChar(8)
+  fechaNacimiento      DateTime               @db.Date
+  direccion            String?                @db.VarChar(255)
+  email                String?                @db.VarChar(255)
+  celular1             String                 @db.VarChar(9)
+  celular2             String?                @db.VarChar(9)
+  asesor               String?                @db.VarChar(255)
+  fechaAlta            DateTime?              @db.Date
+  detalles             String?
+  banco                String?                @db.VarChar(255)
+  cuenta               String?                @db.VarChar(255)
+  cci                  String?                @db.VarChar(255)
+  usuarioId            String?                @db.Uuid
+  activo               Boolean?               @default(true)
+  createdAt            DateTime               @db.Timestamptz(6)
+  updatedAt            DateTime               @db.Timestamptz(6)
+  PropiedadPropietario PropiedadPropietario[]
+}
+
+model requerimientos {
+  id        String    @id @db.Uuid
+  fecha     DateTime  @db.Date
+  pedido    String
+  prioridad String?   @default("NORMAL") @db.VarChar(255)
+  estado    String?   @default("ABIERTO") @db.VarChar(255)
+  clienteId String    @db.Uuid
+  usuarioId String?   @db.Uuid
+  createdAt DateTime  @db.Timestamptz(6)
+  updatedAt DateTime  @db.Timestamptz(6)
+  clientes  clientes  @relation(fields: [clienteId], references: [id], onDelete: Cascade)
+  usuarios  usuarios? @relation(fields: [usuarioId], references: [id])
+}
+
+model seguimientos {
+  id           String       @id @db.Uuid
+  fecha        DateTime     @db.Timestamptz(6)
+  comentario   String
+  estado       String?      @db.VarChar(255)
+  fechaProxima DateTime?    @db.Timestamptz(6)
+  usuarioId    String?      @db.Uuid
+  clienteId    String       @db.Uuid
+  propiedadId  String?      @db.Uuid
+  tipoAccion   String?      @db.VarChar(255)
+  respuesta    String?
+  createdAt    DateTime     @db.Timestamptz(6)
+  updatedAt    DateTime     @db.Timestamptz(6)
+  clientes     clientes     @relation(fields: [clienteId], references: [id], onDelete: Cascade)
+  propiedades  propiedades? @relation(fields: [propiedadId], references: [id])
+  usuarios     usuarios?    @relation(fields: [usuarioId], references: [id])
+}
+
+model solicitudes_permiso {
+  id             String                               @id @db.Uuid
+  usuarioId      String                               @db.Uuid
+  tipoAccion     enum_solicitudes_permiso_tipoAccion
+  entidadTipo    enum_solicitudes_permiso_entidadTipo
+  entidadId      String                               @db.Uuid
+  motivo         String
+  estado         enum_solicitudes_permiso_estado?     @default(PENDIENTE)
+  adminId        String?                              @db.Uuid
+  respuestaAdmin String?                              @db.VarChar(255)
+  createdAt      DateTime                             @db.Timestamptz(6)
+  updatedAt      DateTime                             @db.Timestamptz(6)
+}
+
+model usuarios {
+  id                 String             @id @db.Uuid
+  nombre             String             @db.VarChar(255)
+  email              String             @unique @db.VarChar(255)
+  password           String             @db.VarChar(255)
+  rol                enum_usuarios_rol? @default(ASESOR)
+  activo             Boolean?           @default(true)
+  mustChangePassword Boolean?           @default(true)
+  motivoSuspension   String?            @db.VarChar(255)
+  createdAt          DateTime           @db.Timestamptz(6)
+  updatedAt          DateTime           @db.Timestamptz(6)
+  requerimientos     requerimientos[]
+  seguimientos       seguimientos[]
+  visitas            visitas[]
+}
+
+model visitas {
+  id                   String      @id @db.Uuid
+  clienteId            String      @db.Uuid
+  propiedadId          String      @db.Uuid
+  createdAt            DateTime    @db.Timestamptz(6)
+  updatedAt            DateTime    @db.Timestamptz(6)
+  fechaProgramada      DateTime    @db.Timestamptz(6)
+  estado               String?     @default("PENDIENTE") @db.VarChar(255)
+  comentariosPrevios   String?
+  resultadoSeguimiento String?
+  asesorId             String      @db.Uuid
+  usuarios             usuarios    @relation(fields: [asesorId], references: [id], onDelete: Cascade)
+  clientes             clientes    @relation(fields: [clienteId], references: [id], onDelete: Cascade)
+  propiedades          propiedades @relation(fields: [propiedadId], references: [id], onDelete: Cascade)
+}
+
+enum enum_agentes_estado {
+  ALIADO
+  OBSERVADO
+}
+
+enum enum_captaciones_fuente {
+  GRUPOS
+  LETRERO
+  PERIODICO
+  OTROS
+}
+
+enum enum_captaciones_inmueble {
+  CASA
+  CASA_TERRENO
+  DEPARTAMENTO
+  PENTHOUSE
+  DUPLEX
+  LOCAL_COMERCIAL
+  TERRENO
+  TERRENO_AGRICOLA
+  TERRENO_INDUSTRIAL
+  OTROS
+}
+
+enum enum_captaciones_moneda {
+  USD
+  PEN
+}
+
+enum enum_captaciones_relacion {
+  PROPIETARIO
+  AGENTE
+  INMOBILIARIA
+  CONSTRUCTORA
+}
+
+enum enum_captaciones_tipoOperacion {
+  VENTA
+  ALQUILER
+  ANTICRESIS
+  VENTA_ALQUILER
+}
+
+enum enum_cartera_clientes_estado {
+  ACTIVO
+  FINALIZADO
+}
+
+enum enum_cartera_clientes_tipo {
+  PROPIETARIO
+  INQUILINO
+  COMPRADOR
+}
+
+enum enum_cierres_estado {
+  PENDIENTE
+  CERRADO
+  CAIDO
+}
+
+enum enum_cierres_moneda {
+  USD
+  PEN
+}
+
+enum enum_cierres_tipoOperacion {
+  VENTA
+  ALQUILER
+}
+
+enum enum_clientes_tipo {
+  PROSPECTO
+  CLIENTE
+}
+
+enum enum_solicitudes_permiso_entidadTipo {
+  PROPIEDAD
+  CLIENTE
+  PROPIETARIO
+}
+
+enum enum_solicitudes_permiso_estado {
+  PENDIENTE
+  APROBADO
+  RECHAZADO
+}
+
+enum enum_solicitudes_permiso_tipoAccion {
+  EDITAR
+  ELIMINAR
+}
+
+enum enum_usuarios_rol {
+  ADMIN
+  ASESOR
+}
