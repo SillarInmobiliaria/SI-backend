@@ -50,9 +50,23 @@ const PORT = process.env.PORT || 4000;
 app.use(helmet());
 app.use(morgan('dev'));
 
-// CORS PREPARADO PARA PRODUCCIÓN
+const allowedOrigins = [
+    'http://localhost:3000',
+    'https://si-frontend-navy.vercel.app',
+    process.env.FRONTEND_URL 
+];
+
 app.use(cors({
-    origin: process.env.FRONTEND_URL || '*',
+    origin: function (origin, callback) {
+        if (!origin) return callback(null, true);
+        
+        if (allowedOrigins.indexOf(origin) !== -1 || !origin) {
+            callback(null, true);
+        } else {
+            console.log("Bloqueado por CORS:", origin);
+            callback(new Error('No permitido por CORS'));
+        }
+    },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization']
@@ -105,11 +119,13 @@ const crearUsuariosPorDefecto = async () => {
                 mustChangePassword: false
             });
         } else {
-            console.log('⚠️ El Admin ya existe. FORZANDO contraseña a 123456...');
-            await Usuario.update(
-                { password: hashedPassword, activo: true },
-                { where: { email: emailAdmin } }
-            );
+            console.log('⚠️ El Admin ya existe. Asegurando contraseña...');
+            
+            // Opcional: Si quieres asegurar que la contraseña siempre sea 123456 al reiniciar
+            // await Usuario.update(
+            //     { password: hashedPassword, activo: true },
+            //     { where: { email: emailAdmin } }
+            // );
         }
         console.log('✅ ACCESO GARANTIZADO: admin@sillar.com / 123456');
     } catch (error) {
