@@ -2,7 +2,10 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import db from './config/db';
-import bcrypt from 'bcryptjs'; 
+import bcrypt from 'bcryptjs';
+import helmet from 'helmet';
+import morgan from 'morgan';
+
 import dashboardRoutes from './routes/dashboardRoutes';
 
 // Importar Modelos
@@ -43,9 +46,16 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 4000;
 
+// ACTIVAMOS LA SEGURIDAD
+app.use(helmet());
+app.use(morgan('dev'));
+
+// CORS PREPARADO PARA PRODUCCIÓN
 app.use(cors({
-    origin: 'http://localhost:3000',
-    credentials: true
+    origin: process.env.FRONTEND_URL || '*',
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
 // Aumentamos el límite de 100kb a 50mb para permitir la subida de Excels grandes
