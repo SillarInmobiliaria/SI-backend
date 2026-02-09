@@ -6,3 +6,5 @@ coverage/
 /generated/prisma
 
 /generated/prisma
+
+!.env.example
