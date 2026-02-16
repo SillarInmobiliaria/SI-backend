@@ -4,34 +4,34 @@ import Feedback from '../models/Feedback';
 export const enviarFeedback = async (req: Request, res: Response) => {
   try {
     const { tipo, asunto, descripcion } = req.body;
-    const usuarioId = (req as any).usuario?.id; 
+    
+    const usuarioId = (req as any).usuario?.id;
 
     if (!usuarioId) {
-      return res.status(401).json({ message: 'Usuario no identificado' });
+      console.error("DEBUG: Token válido pero no se encontró usuarioId en la request");
+      return res.status(401).json({ message: 'Usuario no identificado en el sistema' });
     }
 
     const nuevoFeedback = await Feedback.create({
-      tipo,
-      asunto,
-      descripcion,
-      usuarioId,
+      tipo: tipo || 'BUG',
+      asunto: asunto || 'Sin asunto',
+      descripcion: descripcion || 'Sin descripción',
+      usuarioId: usuarioId,
       estado: 'PENDIENTE'
     });
 
-    return res.status(201).json({ message: '✅ Feedback recibido', nuevoFeedback });
+    return res.status(201).json({ message: '✅ Recibido', id: nuevoFeedback.id });
   } catch (error: any) {
-    console.error('ERROR EN FEEDBACK:', error);
-    return res.status(500).json({ message: 'Error al procesar el envío' });
+    console.error('ERROR CRÍTICO BACKEND:', error.message);
+    return res.status(500).json({ message: 'Error interno guardando reporte' });
   }
 };
 
-export const obtenerFeedbacks = async (req: Request, res: Response) => {
+export const obtenerFeedbacks = async (_req: Request, res: Response) => {
   try {
-    const feedbacks = await Feedback.findAll({
-      order: [['createdAt', 'DESC']]
-    });
-    return res.json(feedbacks);
+    const data = await Feedback.findAll({ order: [['createdAt', 'DESC']] });
+    return res.json(data);
   } catch (error) {
-    return res.status(500).json({ message: 'Error al obtener los datos' });
+    return res.status(500).json({ message: 'Error al leer la DB' });
   }
 };
