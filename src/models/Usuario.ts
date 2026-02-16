@@ -3,13 +3,17 @@ import db from '../config/db';
 import bcrypt from 'bcryptjs';
 
 class Usuario extends Model {
-  password(password: any, password1: any) {
-    throw new Error('Method not implemented.');
-  }
-  nombre: any;
-  id: any;
-  mustChangePassword: any;
-  email: any;
+  public id!: string;
+  public nombre!: string;
+  public email!: string;
+  public password!: string;
+  public rol!: string;
+  public activo!: boolean;
+  public mustChangePassword!: boolean;
+  public motivoSuspension!: string | null;
+  public passwordChanged!: boolean;
+  public createdAt!: Date;
+  public updatedAt!: Date;
 }
 
 Usuario.init({
@@ -43,6 +47,10 @@ Usuario.init({
     type: DataTypes.BOOLEAN,
     defaultValue: true,
   },
+  passwordChanged: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false,
+  },
   motivoSuspension: {
     type: DataTypes.STRING,
     allowNull: true,
@@ -51,6 +59,7 @@ Usuario.init({
   sequelize: db,
   modelName: 'Usuario',
   tableName: 'usuarios',
+  timestamps: true,
   hooks: {
     beforeCreate: async (usuario: any) => {
       if (usuario.password) {
