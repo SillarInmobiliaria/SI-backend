@@ -8,28 +8,28 @@ datasource db {
 }
 
 model PropiedadPropietario {
-  createdAt     DateTime     @db.Timestamptz(6)
-  updatedAt     DateTime     @db.Timestamptz(6)
-  PropiedadId   String       @db.Uuid
-  PropietarioId String       @db.Uuid
-  propiedades   propiedades  @relation(fields: [PropiedadId], references: [id], onDelete: Cascade)
+  createdAt     DateTime    @db.Timestamptz(6)
+  updatedAt     DateTime    @db.Timestamptz(6)
+  PropiedadId   String      @db.Uuid
+  PropietarioId String      @db.Uuid
+  propiedades   propiedades @relation(fields: [PropiedadId], references: [id], onDelete: Cascade)
   propietarios  propietarios @relation(fields: [PropietarioId], references: [id], onDelete: Cascade)
 
   @@id([PropiedadId, PropietarioId])
 }
 
 model agentes {
-  id               String               @id @db.Uuid
-  nombre           String               @db.VarChar(255)
-  inmobiliaria     String?              @db.VarChar(255)
-  celular1         String?              @db.VarChar(255)
-  celular2         String?              @db.VarChar(255)
-  celular3         String?              @db.VarChar(255)
+  id               String                @id @db.Uuid
+  nombre           String                @db.VarChar(255)
+  inmobiliaria     String?               @db.VarChar(255)
+  celular1         String?               @db.VarChar(255)
+  celular2         String?               @db.VarChar(255)
+  celular3         String?               @db.VarChar(255)
   link             String?
   datosAdicionales String?
-  estado           enum_agentes_estado? @default(ALIADO)
-  createdAt        DateTime             @db.Timestamptz(6)
-  updatedAt        DateTime             @db.Timestamptz(6)
+  estado           enum_agentes_estado?  @default(ALIADO)
+  createdAt        DateTime              @db.Timestamptz(6)
+  updatedAt        DateTime              @db.Timestamptz(6)
 }
 
 model captaciones {
@@ -75,53 +75,53 @@ model cartera_clientes {
 }
 
 model cierres {
-  id                       String                     @id @db.Uuid
-  tipoOperacion            enum_cierres_tipoOperacion
-  fechaCierre              DateTime?                  @db.Date
-  propiedadId              String?                    @db.VarChar(255)
-  clienteId                String?                    @db.VarChar(255)
-  asesorId                 String?                    @db.VarChar(255)
-  notaria                  String?                    @db.VarChar(255)
-  ubicacionNotaria         String?                    @db.VarChar(255)
-  observaciones            String?
-  estado                   enum_cierres_estado?       @default(PENDIENTE)
-  partidaRegistral         String?                    @db.VarChar(255)
-  tipoFirma                String?                    @db.VarChar(255)
-  moneda                   enum_cierres_moneda?       @default(PEN)
-  montoRenta               Decimal?                   @default(0) @db.Decimal(12, 2)
-  fechaInicio              DateTime?                  @db.Date
-  fechaTermino             DateTime?                  @db.Date
-  plazoContrato            String?                    @db.VarChar(255)
-  diasGracia               Int?                       @default(0)
-  diasTolerancia           Int?                       @default(0)
-  moraDiaria               Decimal?                   @default(0) @db.Decimal(10, 2)
-  penalidadResolucion      Decimal?                   @default(0) @db.Decimal(10, 2)
-  garantia                 Decimal?                   @default(0) @db.Decimal(12, 2)
-  mesAdelantado            Decimal?                   @default(0) @db.Decimal(12, 2)
-  banco                    String?                    @db.VarChar(255)
-  numeroCuenta             String?                    @db.VarChar(255)
-  cci                      String?                    @db.VarChar(255)
-  titularCuenta            String?                    @db.VarChar(255)
-  tieneInventario          Boolean?                   @default(false)
-  permiteMascotas          Boolean?                   @default(false)
-  incluyeCochera           Boolean?                   @default(false)
-  mantenimientoIncluido    Boolean?                   @default(false)
-  direccionClienteContrato String?                    @db.VarChar(255)
-  datosRepresentante       String?
-  numeroEscritura          String?                    @db.VarChar(255)
-  gastosNotariales         Decimal?                   @default(0) @db.Decimal(12, 2)
-  gastosRegistrales        Decimal?                   @default(0) @db.Decimal(12, 2)
-  fechaEntrega             DateTime?                  @db.Date
-  montoVenta               Decimal?                   @default(0) @db.Decimal(15, 2)
-  impuestoAlcabala         Decimal?                   @default(0) @db.Decimal(12, 2)
-  impuestoRenta            Decimal?                   @default(0) @db.Decimal(12, 2)
-  formaPago                String?                    @db.VarChar(255)
-  etapaVenta               String?                    @db.VarChar(255)
-  montoArras               Decimal?                   @default(0) @db.Decimal(12, 2)
-  bancoFinanciamiento      String?                    @db.VarChar(255)
-  cuotaInicial             Decimal?                   @default(0) @db.Decimal(15, 2)
-  createdAt                DateTime                   @db.Timestamptz(6)
-  updatedAt                DateTime                   @db.Timestamptz(6)
+  id                   String                  @id @db.Uuid
+  tipoOperacion        enum_cierres_tipoOperacion
+  fechaCierre          DateTime?               @db.Date
+  propiedadId          String?                 @db.VarChar(255)
+  clienteId            String?                 @db.VarChar(255)
+  asesorId             String?                 @db.VarChar(255)
+  notaria              String?                 @db.VarChar(255)
+  ubicacionNotaria     String?                 @db.VarChar(255)
+  observaciones        String?
+  estado               enum_cierres_estado?    @default(PENDIENTE)
+  partidaRegistral     String?                 @db.VarChar(255)
+  tipoFirma            String?                 @db.VarChar(255)
+  moneda               enum_cierres_moneda?    @default(PEN)
+  montoRenta           Decimal?                @default(0) @db.Decimal(12, 2)
+  fechaInicio          DateTime?               @db.Date
+  fechaTermino         DateTime?               @db.Date
+  plazoContrato        String?                 @db.VarChar(255)
+  diasGracia           Int?                    @default(0)
+  diasTolerancia       Int?                    @default(0)
+  moraDiaria           Decimal?                @default(0) @db.Decimal(10, 2)
+  penalidadResolucion  Decimal?                @default(0) @db.Decimal(10, 2)
+  garantia             Decimal?                @default(0) @db.Decimal(12, 2)
+  mesAdelantado        Decimal?                @default(0) @db.Decimal(12, 2)
+  banco                String?                 @db.VarChar(255)
+  numeroCuenta         String?                 @db.VarChar(255)
+  cci                  String?                 @db.VarChar(255)
+  titularCuenta        String?                 @db.VarChar(255)
+  tieneInventario      Boolean?                @default(false)
+  permiteMascotas      Boolean?                @default(false)
+  incluyeCochera       Boolean?                @default(false)
+  mantenimientoIncluido Boolean?               @default(false)
+  direccionClienteContrato String?             @db.VarChar(255)
+  datosRepresentante   String?
+  numeroEscritura      String?                 @db.VarChar(255)
+  gastosNotariales     Decimal?                @default(0) @db.Decimal(12, 2)
+  gastosRegistrales    Decimal?                @default(0) @db.Decimal(12, 2)
+  fechaEntrega         DateTime?               @db.Date
+  montoVenta           Decimal?                @default(0) @db.Decimal(15, 2)
+  impuestoAlcabala     Decimal?                @default(0) @db.Decimal(12, 2)
+  impuestoRenta        Decimal?                @default(0) @db.Decimal(12, 2)
+  formaPago            String?                 @db.VarChar(255)
+  etapaVenta           String?                 @db.VarChar(255)
+  montoArras           Decimal?                @default(0) @db.Decimal(12, 2)
+  bancoFinanciamiento  String?                 @db.VarChar(255)
+  cuotaInicial         Decimal?                @default(0) @db.Decimal(15, 2)
+  createdAt            DateTime                @db.Timestamptz(6)
+  updatedAt            DateTime                @db.Timestamptz(6)
 }
 
 model clientes {
@@ -171,18 +171,18 @@ model notificaciones {
 }
 
 model operaciones {
-  id             String    @id @db.Uuid
-  tipoGestion    String    @db.VarChar(255)
-  estado         String    @db.VarChar(255)
-  fechaOperacion DateTime  @db.Date
+  id             String   @id @db.Uuid
+  tipoGestion    String   @db.VarChar(255)
+  estado         String   @db.VarChar(255)
+  fechaOperacion DateTime @db.Date
   fechaContrato  DateTime? @db.Date
-  precioFinal    Decimal   @db.Decimal(10, 2)
-  honorarios     Decimal   @db.Decimal(5, 2)
-  asesor         String    @db.VarChar(255)
-  propiedadId    String    @db.Uuid
-  clienteId      String?   @db.Uuid
-  createdAt      DateTime  @db.Timestamptz(6)
-  updatedAt      DateTime  @db.Timestamptz(6)
+  precioFinal    Decimal  @db.Decimal(10, 2)
+  honorarios     Decimal  @db.Decimal(5, 2)
+  asesor         String   @db.VarChar(255)
+  propiedadId    String   @db.Uuid
+  clienteId      String?  @db.Uuid
+  createdAt      DateTime @db.Timestamptz(6)
+  updatedAt      DateTime @db.Timestamptz(6)
 }
 
 model propiedades {
@@ -318,6 +318,8 @@ model usuarios {
   motivoSuspension   String?            @db.VarChar(255)
   createdAt          DateTime           @db.Timestamptz(6)
   updatedAt          DateTime           @db.Timestamptz(6)
+  // CAMBIO IMPORTANTE: Agregado para el banner del frontend
+  passwordChanged    Boolean?           @default(false)
   requerimientos     requerimientos[]
   seguimientos       seguimientos[]
   visitas            visitas[]
@@ -339,6 +341,7 @@ model visitas {
   propiedades          propiedades @relation(fields: [propiedadId], references: [id], onDelete: Cascade)
 }
 
+// ... (tus enums se mantienen igual abajo)
 enum enum_agentes_estado {
   ALIADO
   OBSERVADO

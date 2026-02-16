@@ -5,7 +5,7 @@ import jwt from 'jsonwebtoken';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'sillar_secreto_super_seguro';
 
-// 1. INICIAR SESIÓN
+// INICIAR SESIÓN
 export const login = async (req: Request, res: Response) => {
   try {
     const { email, password } = req.body;
@@ -17,7 +17,7 @@ export const login = async (req: Request, res: Response) => {
       return res.status(404).json({ message: 'Usuario no encontrado' });
     }
 
-    // Convertimos a objeto plano para manejar propiedades fácilmente
+    // Convertimos a objeto plano
     const usuarioData = usuario.get({ plain: true }) as any;
 
     // Verificar si está activo
@@ -41,17 +41,16 @@ export const login = async (req: Request, res: Response) => {
       { expiresIn: '8h' }
     );
 
-    // Responder
-    // IMPORTANTE: Enviamos 'mustChangePassword' para que el Front sepa si mostrar la alerta
     res.json({
       message: 'Login exitoso',
       token,
-      usuario: {
+      user: {
         id: usuarioData.id,
         nombre: usuarioData.nombre,
         email: usuarioData.email,
         rol: usuarioData.rol,
-        mustChangePassword: usuarioData.mustChangePassword
+        createdAt: usuarioData.createdAt,
+        passwordChanged: usuarioData.passwordChanged
       }
     });
 
@@ -61,7 +60,7 @@ export const login = async (req: Request, res: Response) => {
   }
 };
 
-// 2. CAMBIAR CONTRASEÑA
+// CAMBIAR CONTRASEÑA
 export const cambiarPassword = async (req: Request, res: Response) => {
     try {
         const { password } = req.body;
@@ -79,7 +78,8 @@ export const cambiarPassword = async (req: Request, res: Response) => {
         await Usuario.update(
             { 
                 password: hashedPassword, 
-                mustChangePassword: false
+                mustChangePassword: false,
+                passwordChanged: true 
             },
             { where: { id: userId } }
         );
@@ -92,7 +92,7 @@ export const cambiarPassword = async (req: Request, res: Response) => {
     }
 };
 
-// 3. REGISTRAR ADMIN
+// REGISTRAR ADMIN
 export const registrarAdmin = async (req: Request, res: Response) => {
     try {
         const { nombre, email, password, celular } = req.body;
@@ -110,7 +110,8 @@ export const registrarAdmin = async (req: Request, res: Response) => {
             rol: 'ADMIN',
             celular,
             activo: true,
-            mustChangePassword: false
+            mustChangePassword: false,
+            passwordChanged: true
         });
 
         res.status(201).json(nuevo);

@@ -7,8 +7,7 @@ const generarPasswordTemporal = () => {
   return Math.random().toString(36).slice(-8); // Ej: "x7z9q1w2"
 };
 
-// 1. CREAR USUARIO (Solo Admin)
-
+// CREAR USUARIO
 export const createUsuario = async (req: Request, res: Response): Promise<void> => {
   try {
     const { nombre, email, rol } = req.body;
@@ -35,7 +34,8 @@ export const createUsuario = async (req: Request, res: Response): Promise<void> 
       password: passwordTemporal,
       rol,
       mustChangePassword: true,
-      activo: true
+      activo: true,
+      passwordChanged: false
     });
 
     res.status(201).json({ 
@@ -54,12 +54,11 @@ export const createUsuario = async (req: Request, res: Response): Promise<void> 
   }
 };
 
-// 2. OBTENER LISTA DE USUARIOS (Ordenada A-Z)
-
+// OBTENER LISTA DE USUARIOS (Ordenada A-Z)
 export const getUsuarios = async (req: Request, res: Response) => {
     try {
         const usuarios = await Usuario.findAll({
-            attributes: ['id', 'nombre', 'email', 'rol', 'activo', 'createdAt', 'motivoSuspension'],
+            attributes: ['id', 'nombre', 'email', 'rol', 'activo', 'createdAt', 'motivoSuspension', 'passwordChanged'],
             order: [['nombre', 'ASC']]
         });
         res.json(usuarios);
@@ -68,8 +67,7 @@ export const getUsuarios = async (req: Request, res: Response) => {
     }
 };
 
-// 3. SUSPENDER / REACTIVAR (Con Motivo)
-
+// SUSPENDER / REACTIVAR (Con Motivo)
 export const toggleEstadoUsuario = async (req: Request, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
@@ -86,8 +84,6 @@ export const toggleEstadoUsuario = async (req: Request, res: Response): Promise<
     // @ts-ignore
     usuario.activo = activo;
     
-    // Si estamos DESACTIVANDO (activo = false), guardamos el motivo.
-    // Si estamos REACTIVANDO (activo = true), limpiamos el motivo (null).
     // @ts-ignore
     usuario.motivoSuspension = activo ? null : (motivo || 'Suspensión administrativa sin detalle');
 
@@ -104,8 +100,7 @@ export const toggleEstadoUsuario = async (req: Request, res: Response): Promise<
   }
 };
 
-// 4. ELIMINAR USUARIO
-
+// ELIMINAR USUARIO
 export const deleteUsuario = async (req: Request, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
@@ -124,8 +119,7 @@ export const deleteUsuario = async (req: Request, res: Response): Promise<void> 
   }
 };
 
-// 5. OBTENER NOTIFICACIONES DEL SISTEMA
-
+// OBTENER NOTIFICACIONES DEL SISTEMA
 export const getNotificaciones = async (req: Request, res: Response): Promise<void> => {
     try {
         const notificaciones = await Notificacion.findAll({ 
