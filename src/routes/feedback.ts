@@ -4,8 +4,7 @@ import { authMiddleware } from '../middleware/authMiddleware';
 
 const router = Router();
 
-// Rutas de Feedback
 router.post('/', authMiddleware, enviarFeedback);
-router.get('/', authMiddleware, obtenerFeedbacks); 
+router.get('/', authMiddleware, obtenerFeedbacks);
 
 export default router;

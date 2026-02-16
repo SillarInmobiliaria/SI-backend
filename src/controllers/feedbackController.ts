@@ -1,34 +1,37 @@
 import { Request, Response } from 'express';
 import Feedback from '../models/Feedback';
-import Usuario from '../models/Usuario';
 
 export const enviarFeedback = async (req: Request, res: Response) => {
   try {
     const { tipo, asunto, descripcion } = req.body;
-    const usuarioId = (req as any).usuario?.id; // Ajusta según cómo manejes el auth
+    const usuarioId = (req as any).usuario?.id; 
+
+    if (!usuarioId) {
+      return res.status(401).json({ message: 'Usuario no identificado' });
+    }
 
     const nuevoFeedback = await Feedback.create({
       tipo,
       asunto,
       descripcion,
-      usuarioId
+      usuarioId,
+      estado: 'PENDIENTE'
     });
 
-    res.status(201).json({ message: '¡Gracias! Tu mensaje ha sido enviado.', nuevoFeedback });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Error al enviar el feedback' });
+    return res.status(201).json({ message: '✅ Feedback recibido', nuevoFeedback });
+  } catch (error: any) {
+    console.error('ERROR EN FEEDBACK:', error);
+    return res.status(500).json({ message: 'Error al procesar el envío' });
   }
 };
 
 export const obtenerFeedbacks = async (req: Request, res: Response) => {
   try {
-    const lista = await Feedback.findAll({
-      include: [{ model: Usuario, attributes: ['nombre', 'email'] }],
+    const feedbacks = await Feedback.findAll({
       order: [['createdAt', 'DESC']]
     });
-    res.json(lista);
+    return res.json(feedbacks);
   } catch (error) {
-    res.status(500).json({ message: 'Error al obtener feedbacks' });
+    return res.status(500).json({ message: 'Error al obtener los datos' });
   }
 };
