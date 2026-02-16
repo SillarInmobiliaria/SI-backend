@@ -5,7 +5,7 @@ import jwt from 'jsonwebtoken';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'sillar_secreto_super_seguro';
 
-// INICIAR SESIÓN
+// 1. INICIAR SESIÓN
 export const login = async (req: Request, res: Response) => {
   try {
     const { email, password } = req.body;
@@ -44,12 +44,12 @@ export const login = async (req: Request, res: Response) => {
     res.json({
       message: 'Login exitoso',
       token,
-      user: {
+      usuario: { 
         id: usuarioData.id,
         nombre: usuarioData.nombre,
         email: usuarioData.email,
         rol: usuarioData.rol,
-        createdAt: usuarioData.createdAt,
+        createdAt: usuarioData.createdAt,            
         passwordChanged: usuarioData.passwordChanged
       }
     });
@@ -60,11 +60,12 @@ export const login = async (req: Request, res: Response) => {
   }
 };
 
-// CAMBIAR CONTRASEÑA
+// 2. CAMBIAR CONTRASEÑA
 export const cambiarPassword = async (req: Request, res: Response) => {
     try {
         const { password } = req.body;
-        const userId = (req as any).user.id; 
+        // Asegúrate de que tu middleware de auth inyecte el usuario en req
+        const userId = (req as any).user?.id || (req as any).usuario?.id; 
 
         if (!password || password.length < 6) {
             return res.status(400).json({ message: 'La contraseña debe tener al menos 6 caracteres' });
@@ -92,7 +93,7 @@ export const cambiarPassword = async (req: Request, res: Response) => {
     }
 };
 
-// REGISTRAR ADMIN
+// 3. REGISTRAR ADMIN
 export const registrarAdmin = async (req: Request, res: Response) => {
     try {
         const { nombre, email, password, celular } = req.body;
