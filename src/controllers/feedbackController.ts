@@ -35,3 +35,22 @@ export const obtenerFeedbacks = async (_req: Request, res: Response) => {
     return res.status(500).json({ message: 'Error al leer la base de datos' });
   }
 };
+
+export const finalizarFeedback = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const ticket = await Feedback.findByPk(id);
+
+    if (!ticket) {
+      return res.status(404).json({ message: 'Ticket no encontrado' });
+    }
+
+    ticket.estado = 'FINALIZADO';
+    await ticket.save();
+
+    return res.json({ message: '✅ Ticket marcado como FINALIZADO', ticket });
+  } catch (error: any) {
+    console.error('ERROR AL FINALIZAR:', error.message);
+    return res.status(500).json({ message: 'Error al actualizar el ticket' });
+  }
+};
