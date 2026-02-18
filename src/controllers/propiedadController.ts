@@ -2,9 +2,9 @@ import { Request, Response } from 'express';
 import Propiedad from '../models/Propiedad';
 import Propietario from '../models/Propietario';
 
-// --- HELPERS ---
 
 const limpiarNumero = (valor: any) => {
+    if (typeof valor === 'string') valor = valor.replace(',', '.');
     if (valor === '' || valor === null || valor === undefined || isNaN(Number(valor))) return null;
     return Number(valor);
 };
@@ -17,28 +17,14 @@ const limpiarFecha = (valor: any) => {
 const parseBoolean = (valor: any) => {
     if (valor === 'null' || valor === null) return null;
     if (valor === undefined) return undefined;
-    
     if (typeof valor === 'boolean') return valor;
     if (typeof valor === 'number') return valor !== 0;
-    
     if (typeof valor === 'string') {
         const v = valor.trim().toLowerCase();
         if (['true', '1', 'on'].includes(v)) return true;
         if (['false', '0', 'off'].includes(v)) return false;
-        if (v === 'null') return null;
     }
     return false;
-};
-
-const parseObservaciones = (propiedad: any) => {
-    const data = propiedad.toJSON ? propiedad.toJSON() : propiedad;
-    if (data.observaciones && typeof data.observaciones === 'string') {
-        try {
-            data.observaciones = JSON.parse(data.observaciones);
-        } catch (e) {}
-    }
-    data.comentarios = data.observaciones; 
-    return data;
 };
 
 // 1. CREAR PROPIEDAD
@@ -58,8 +44,8 @@ export const crearPropiedad = async (req: Request, res: Response) => {
         let datosPropiedad = {
             ...resto,
             precio: limpiarNumero(rawBody.precio),
+            moneda: rawBody.moneda || 'USD', // Toma la moneda del front
             mantenimiento: limpiarNumero(rawBody.mantenimiento),
-            
             area: limpiarNumero(rawBody.area),
             areaConstruida: limpiarNumero(rawBody.areaConstruida),
             habitaciones: limpiarNumero(rawBody.habitaciones),
@@ -69,11 +55,17 @@ export const crearPropiedad = async (req: Request, res: Response) => {
             fechaCaptacion: limpiarFecha(rawBody.fechaCaptacion),
             inicioContrato: limpiarFecha(rawBody.inicioContrato),
             finContrato: limpiarFecha(rawBody.finContrato),
-            observaciones: typeof rawBody.observaciones === 'object' ? JSON.stringify(rawBody.observaciones) : (rawBody.observaciones || '')
+            observaciones: rawBody.observaciones || '' // Texto simple
         };
 
-        const bools = ['testimonio', 'hr', 'pu', 'impuestoPredial', 'arbitrios', 'copiaLiteral', 'revision'];
-        bools.forEach(f => datosPropiedad[f] = parseBoolean(resto[f] ?? rawBody[f]));
+        // Checklist de documentos (Venta y Alquiler unificados)
+        const bools = [
+            'testimonio', 'hr', 'pu', 'impuestoPredial', 
+            'arbitrios', 'copiaLiteral', 'cri', 'reciboAguaLuz', 'revision'
+        ];
+        bools.forEach(f => {
+            datosPropiedad[f] = parseBoolean(rawBody[f]);
+        });
 
         if (galeria.length === 0 && typeof resto.galeria === 'string') {
             try { const p = JSON.parse(resto.galeria); if (Array.isArray(p)) galeria = p; } catch (e) {}
@@ -135,8 +127,7 @@ export const obtenerPropiedades = async (req: Request, res: Response) => {
             order: [['createdAt', 'DESC']] 
         });
 
-        const respuesta = propiedades.map(p => parseObservaciones(p));
-        res.json(respuesta);
+        res.json(propiedades);
 
     } catch (e) { 
         console.error(e);
@@ -153,8 +144,7 @@ export const getPropiedad = async (req: Request, res: Response) => {
         });
 
         if (!propiedad) return res.status(404).json({ message: 'Propiedad no encontrada' });
-        
-        res.json(parseObservaciones(propiedad));
+        res.json(propiedad);
 
     } catch (e) { 
         console.error(e);
@@ -170,36 +160,30 @@ export const updatePropiedad = async (req: Request, res: Response) => {
         if (!propiedad) return res.status(404).json({ message: 'No encontrada' });
 
         const raw = req.body;
-        console.log("➡️ Update Payload:", JSON.stringify(raw, null, 2));
-
         const updates: any = {};
 
+        // Campos numéricos con decimales
         ['precio', 'mantenimiento', 'area', 'areaConstruida', 'habitaciones', 'banos', 'cocheras', 'comision']
             .forEach(f => { if (raw[f] !== undefined) updates[f] = limpiarNumero(raw[f]); });
-        
-        if (updates.precio === null) delete updates.precio; 
 
-        ['testimonio', 'hr', 'pu', 'impuestoPredial', 'arbitrios', 'copiaLiteral', 'revision']
+        // Documentación (Booleans)
+        ['testimonio', 'hr', 'pu', 'impuestoPredial', 'arbitrios', 'copiaLiteral', 'cri', 'reciboAguaLuz', 'revision']
             .forEach(f => { if (raw[f] !== undefined) updates[f] = parseBoolean(raw[f]); });
 
         ['fechaCaptacion', 'inicioContrato', 'finContrato']
             .forEach(f => { if (raw[f] !== undefined) updates[f] = limpiarFecha(raw[f]); });
 
+        // Campos de texto y links
         ['tipo', 'modalidad', 'ubicacion', 'direccion', 'moneda', 'descripcion', 
          'detalles', 'videoUrl', 'mapaUrl', 'pdfUrl', 'tipoContrato', 'asesor',
          'partidaRegistral', 'partidaAdicional', 'partidaCochera', 'partidaDeposito',
-         'link1', 'link2', 'link3', 'link4', 'link5'].forEach(f => { 
+         'link1', 'link2', 'link3', 'link4', 'link5', 'observaciones'].forEach(f => { 
              if (raw[f] !== undefined) updates[f] = raw[f]; 
          });
 
-        let obs = raw.observaciones;
-        if (obs !== undefined) {
-            updates.observaciones = typeof obs === 'object' ? JSON.stringify(obs) : String(obs);
-        }
-
         await propiedad.update(updates);
         const propiedadActualizada = await Propiedad.findByPk(id, { include: [{ model: Propietario }] });
-        res.json({ message: 'Actualizada correctamente', propiedad: parseObservaciones(propiedadActualizada) });
+        res.json({ message: 'Actualizada correctamente', propiedad: propiedadActualizada });
 
     } catch (e: any) {
         console.error("❌ Error Update:", e);

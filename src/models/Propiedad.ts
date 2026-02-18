@@ -15,14 +15,18 @@ Propiedad.init(
     modalidad: { type: DataTypes.STRING, allowNull: false },
     ubicacion: { type: DataTypes.STRING, allowNull: false },
     direccion: { type: DataTypes.STRING, allowNull: true },
+    
+    // DECIMAL(12, 2) es perfecto para precio
     precio: { type: DataTypes.DECIMAL(12, 2), allowNull: false },
     moneda: { type: DataTypes.STRING, defaultValue: 'USD' },
     
     // Mantenimiento (Para departamentos)
     mantenimiento: { type: DataTypes.DECIMAL(10, 2), allowNull: true },
 
-    area: { type: DataTypes.FLOAT, allowNull: true },
-    areaConstruida: { type: DataTypes.FLOAT, allowNull: true },
+    // CAMBIO: Usamos DECIMAL en lugar de FLOAT para mayor precisión en m²
+    area: { type: DataTypes.DECIMAL(10, 2), allowNull: true },
+    areaConstruida: { type: DataTypes.DECIMAL(10, 2), allowNull: true },
+    
     habitaciones: { type: DataTypes.INTEGER, allowNull: true },
     banos: { type: DataTypes.INTEGER, allowNull: true },
     cocheras: { type: DataTypes.INTEGER, allowNull: true },
@@ -52,18 +56,25 @@ Propiedad.init(
     tipoContrato: { type: DataTypes.STRING, allowNull: true },
     comision: { type: DataTypes.FLOAT, allowNull: true },
 
+    // --- DOCUMENTACIÓN (CHECKLIST) ---
     testimonio: { type: DataTypes.BOOLEAN, defaultValue: false },
     hr: { type: DataTypes.BOOLEAN, defaultValue: false },
     pu: { type: DataTypes.BOOLEAN, defaultValue: false },
     impuestoPredial: { type: DataTypes.BOOLEAN, defaultValue: false },
     arbitrios: { type: DataTypes.BOOLEAN, defaultValue: false },
     copiaLiteral: { type: DataTypes.BOOLEAN, defaultValue: false },
+    
+    // NUEVOS CAMPOS PARA ALQUILER
+    cri: { type: DataTypes.BOOLEAN, defaultValue: false },
+    reciboAguaLuz: { type: DataTypes.BOOLEAN, defaultValue: false },
 
     revision: { type: DataTypes.BOOLEAN, defaultValue: false },
 
     asesor: { type: DataTypes.STRING, allowNull: true },
     usuarioId: { type: DataTypes.UUID, allowNull: true },
     activo: { type: DataTypes.BOOLEAN, defaultValue: true },
+    
+    // OBSERVACIONES / NOTAS ADICIONALES
     observaciones: { type: DataTypes.TEXT, allowNull: true }
   },
   {
