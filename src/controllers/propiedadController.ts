@@ -2,7 +2,6 @@ import { Request, Response } from 'express';
 import Propiedad from '../models/Propiedad';
 import Propietario from '../models/Propietario';
 
-
 const limpiarNumero = (valor: any) => {
     if (typeof valor === 'string') valor = valor.replace(',', '.');
     if (valor === '' || valor === null || valor === undefined || isNaN(Number(valor))) return null;
@@ -27,6 +26,15 @@ const parseBoolean = (valor: any) => {
     return false;
 };
 
+// --- FUNCIÓN PARA PROCESAR URLS DE IMÁGENES ---
+const obtenerUrlImagen = (file: Express.Multer.File | undefined) => {
+    if (!file) return null;
+    // Si usas Cloudinary, Multer guarda la URL en 'path' o 'secure_url'
+    // Si es local, guarda 'uploads/archivo.jpg'. 
+    // Esta lógica detecta si es una URL de internet o una ruta local.
+    return file.path.startsWith('http') ? file.path : file.path.replace(/\\/g, '/');
+};
+
 // 1. CREAR PROPIEDAD
 export const crearPropiedad = async (req: Request, res: Response) => {
     const t = await Propiedad.sequelize!.transaction();
@@ -34,17 +42,18 @@ export const crearPropiedad = async (req: Request, res: Response) => {
         const usuario = (req as any).user;
         const files = req.files as { [fieldname: string]: Express.Multer.File[] };
         
-        const fotoPrincipal = files['fotoPrincipal'] ? files['fotoPrincipal'][0].path : null;
-        const pdfUrl = files['pdf'] ? files['pdf'][0].path : null;
-        let galeria: string[] = files['galeria'] ? files['galeria'].map(f => f.path) : [];
+        // CORRECCIÓN: Extraer URLs correctamente
+        const fotoPrincipal = obtenerUrlImagen(files['fotoPrincipal']?.[0]);
+        const pdfUrl = obtenerUrlImagen(files['pdf']?.[0]);
+        let galeria: string[] = files['galeria'] ? files['galeria'].map(f => obtenerUrlImagen(f) as string) : [];
 
         const rawBody = req.body;
-        const { nombre, dni, celular1, fechaNacimiento, propietarios, ...resto } = rawBody;
+        const { nombre, dni, celular1, fechaNacimiento, ...resto } = rawBody;
 
         let datosPropiedad = {
             ...resto,
             precio: limpiarNumero(rawBody.precio),
-            moneda: rawBody.moneda || 'USD', // Toma la moneda del front
+            moneda: rawBody.moneda || 'USD',
             mantenimiento: limpiarNumero(rawBody.mantenimiento),
             area: limpiarNumero(rawBody.area),
             areaConstruida: limpiarNumero(rawBody.areaConstruida),
@@ -55,17 +64,11 @@ export const crearPropiedad = async (req: Request, res: Response) => {
             fechaCaptacion: limpiarFecha(rawBody.fechaCaptacion),
             inicioContrato: limpiarFecha(rawBody.inicioContrato),
             finContrato: limpiarFecha(rawBody.finContrato),
-            observaciones: rawBody.observaciones || '' // Texto simple
+            observaciones: rawBody.observaciones || ''
         };
 
-        // Checklist de documentos (Venta y Alquiler unificados)
-        const bools = [
-            'testimonio', 'hr', 'pu', 'impuestoPredial', 
-            'arbitrios', 'copiaLiteral', 'cri', 'reciboAguaLuz', 'revision'
-        ];
-        bools.forEach(f => {
-            datosPropiedad[f] = parseBoolean(rawBody[f]);
-        });
+        const bools = ['testimonio', 'hr', 'pu', 'impuestoPredial', 'arbitrios', 'copiaLiteral', 'cri', 'reciboAguaLuz', 'revision'];
+        bools.forEach(f => { datosPropiedad[f] = parseBoolean(rawBody[f]); });
 
         if (galeria.length === 0 && typeof resto.galeria === 'string') {
             try { const p = JSON.parse(resto.galeria); if (Array.isArray(p)) galeria = p; } catch (e) {}
@@ -162,18 +165,15 @@ export const updatePropiedad = async (req: Request, res: Response) => {
         const raw = req.body;
         const updates: any = {};
 
-        // Campos numéricos con decimales
-        ['precio', 'mantenimiento', 'area', 'areaConstruida', 'habitaciones', 'banos', 'cocheras', 'comision']
+        ['precio', 'mantenimiento', 'area', 'areaConstrubuilt', 'habitaciones', 'banos', 'cocheras', 'comision']
             .forEach(f => { if (raw[f] !== undefined) updates[f] = limpiarNumero(raw[f]); });
 
-        // Documentación (Booleans)
         ['testimonio', 'hr', 'pu', 'impuestoPredial', 'arbitrios', 'copiaLiteral', 'cri', 'reciboAguaLuz', 'revision']
             .forEach(f => { if (raw[f] !== undefined) updates[f] = parseBoolean(raw[f]); });
 
         ['fechaCaptacion', 'inicioContrato', 'finContrato']
             .forEach(f => { if (raw[f] !== undefined) updates[f] = limpiarFecha(raw[f]); });
 
-        // Campos de texto y links
         ['tipo', 'modalidad', 'ubicacion', 'direccion', 'moneda', 'descripcion', 
          'detalles', 'videoUrl', 'mapaUrl', 'pdfUrl', 'tipoContrato', 'asesor',
          'partidaRegistral', 'partidaAdicional', 'partidaCochera', 'partidaDeposito',
