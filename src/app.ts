@@ -47,8 +47,9 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 4000;
 
-// ACTIVAMOS LA SEGURIDAD
-app.use(helmet());
+app.use(helmet({
+    crossOriginResourcePolicy: { policy: "cross-origin" }
+}));
 app.use(morgan('dev'));
 
 const allowedOrigins = [
@@ -77,7 +78,11 @@ app.use(cors({
 app.use(express.json({ limit: '100mb' }));
 app.use(express.urlencoded({ limit: '100mb', extended: true }));
 
-app.use('/uploads', express.static('uploads'));
+// Middleware para asegurar que las imágenes se sirvan con permiso de origen cruzado
+app.use('/uploads', (req, res, next) => {
+    res.set('Cross-Origin-Resource-Policy', 'cross-origin');
+    next();
+}, express.static('uploads'));
 
 // Rutas
 app.use('/api/auth', authRoutes);
@@ -150,5 +155,5 @@ const conectarDB = async () => {
 conectarDB();
 
 app.listen(PORT, () => {
-    console.log(`🚀 Servidor en http://localhost:${PORT}`);
+    console.log(`🚀 Servidor en puerto ${PORT}`);
 });
