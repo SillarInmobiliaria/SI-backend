@@ -29,9 +29,6 @@ const parseBoolean = (valor: any) => {
 // --- FUNCIÓN PARA PROCESAR URLS DE IMÁGENES ---
 const obtenerUrlImagen = (file: Express.Multer.File | undefined) => {
     if (!file) return null;
-    // Si usas Cloudinary, Multer guarda la URL en 'path' o 'secure_url'
-    // Si es local, guarda 'uploads/archivo.jpg'. 
-    // Esta lógica detecta si es una URL de internet o una ruta local.
     return file.path.startsWith('http') ? file.path : file.path.replace(/\\/g, '/');
 };
 
@@ -42,7 +39,6 @@ export const crearPropiedad = async (req: Request, res: Response) => {
         const usuario = (req as any).user;
         const files = req.files as { [fieldname: string]: Express.Multer.File[] };
         
-        // CORRECCIÓN: Extraer URLs correctamente
         const fotoPrincipal = obtenerUrlImagen(files['fotoPrincipal']?.[0]);
         const pdfUrl = obtenerUrlImagen(files['pdf']?.[0]);
         let galeria: string[] = files['galeria'] ? files['galeria'].map(f => obtenerUrlImagen(f) as string) : [];
@@ -165,7 +161,7 @@ export const updatePropiedad = async (req: Request, res: Response) => {
         const raw = req.body;
         const updates: any = {};
 
-        ['precio', 'mantenimiento', 'area', 'areaConstrubuilt', 'habitaciones', 'banos', 'cocheras', 'comision']
+        ['precio', 'mantenimiento', 'area', 'areaConstruida', 'habitaciones', 'banos', 'cocheras', 'comision']
             .forEach(f => { if (raw[f] !== undefined) updates[f] = limpiarNumero(raw[f]); });
 
         ['testimonio', 'hr', 'pu', 'impuestoPredial', 'arbitrios', 'copiaLiteral', 'cri', 'reciboAguaLuz', 'revision']
@@ -211,4 +207,45 @@ export const eliminarPropiedad = async (req: Request, res: Response) => {
         await p.destroy();
         res.json({ message: 'Propiedad eliminada' });
     } catch (e) { res.status(500).json({ message: 'Error' }); }
+};
+
+// 7. SUBIR PDF DOCUMENTO (NUEVO)
+export const subirPdfDocumento = async (req: Request, res: Response) => {
+    try {
+        const { id } = req.params;
+        const { documentKey } = req.body; 
+        const file = req.file;
+
+        if (!file) return res.status(400).json({ message: 'No se recibió archivo' });
+
+        const propiedad = await Propiedad.findByPk(id);
+        if (!propiedad) return res.status(404).json({ message: 'Propiedad no encontrada' });
+
+        // Normalizar la ruta del archivo
+        const fileUrl = file.path.startsWith('http') ? file.path : `/${file.path.replace(/\\/g, '/')}`;
+
+        // Obtener documentosUrls actual o inicializarlo
+        let documentosUrls = (propiedad as any).documentosUrls || {};
+        
+        // Manejar si documentosUrls es un string (en algunas bases de datos)
+        if (typeof documentosUrls === 'string') {
+            try { documentosUrls = JSON.parse(documentosUrls); } catch (e) { documentosUrls = {}; }
+        }
+
+        // Guardar la URL bajo la clave enviada (ej: testimonio, hr, pu...)
+        documentosUrls[documentKey] = fileUrl;
+
+        // Actualizar el registro en la base de datos
+        await propiedad.update({ documentosUrls });
+
+        res.json({ 
+            message: 'PDF adjuntado con éxito', 
+            url: fileUrl,
+            documentosUrls 
+        });
+
+    } catch (e: any) {
+        console.error("❌ Error subida PDF:", e);
+        res.status(500).json({ message: 'Error en el servidor al subir PDF', error: e.message });
+    }
 };
