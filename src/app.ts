@@ -73,9 +73,9 @@ app.use(cors({
     allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
-// Aumentamos el límite de 100kb a 50mb para permitir la subida de Excels grandes
-app.use(express.json({ limit: '50mb' }));
-app.use(express.urlencoded({ limit: '50mb', extended: true }));
+// --- CAMBIO AQUÍ: Aumentamos de 50mb a 100mb para soportar las 30 fotos ---
+app.use(express.json({ limit: '100mb' }));
+app.use(express.urlencoded({ limit: '100mb', extended: true }));
 
 app.use('/uploads', express.static('uploads'));
 
@@ -122,12 +122,6 @@ const crearUsuariosPorDefecto = async () => {
             });
         } else {
             console.log('⚠️ El Admin ya existe. Asegurando contraseña...');
-            
-            // Opcional: Si quieres asegurar que la contraseña siempre sea 123456 al reiniciar
-            // await Usuario.update(
-            //     { password: hashedPassword, activo: true },
-            //     { where: { email: emailAdmin } }
-            // );
         }
         console.log('✅ ACCESO GARANTIZADO: admin@sillar.com / 123456');
     } catch (error) {
