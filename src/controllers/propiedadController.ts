@@ -31,6 +31,7 @@ const obtenerUrlImagen = (file: Express.Multer.File | undefined) => {
     return file.path.startsWith('http') ? file.path : file.path.replace(/\\/g, '/');
 };
 
+// 1. CREAR PROPIEDAD
 export const crearPropiedad = async (req: Request, res: Response) => {
     const t = await Propiedad.sequelize!.transaction();
     try {
@@ -94,6 +95,7 @@ export const crearPropiedad = async (req: Request, res: Response) => {
     }
 };
 
+// 2. OBTENER PROPIEDADES
 export const obtenerPropiedades = async (req: Request, res: Response) => {
     try {
         const usuario = (req as any).user;
@@ -106,6 +108,7 @@ export const obtenerPropiedades = async (req: Request, res: Response) => {
     } catch (e) { res.status(500).json({ message: 'Error' }); }
 };
 
+// 3. OBTENER DETALLE
 export const getPropiedad = async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
@@ -115,6 +118,7 @@ export const getPropiedad = async (req: Request, res: Response) => {
     } catch (e) { res.status(500).json({ message: 'Error' }); }
 };
 
+// 4. ACTUALIZAR PROPIEDAD (CORREGIDO Y BLINDADO)
 export const updatePropiedad = async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
@@ -124,30 +128,37 @@ export const updatePropiedad = async (req: Request, res: Response) => {
         const raw = req.body;
         const updates: any = {};
 
-        ['precio', 'mantenimiento', 'area', 'areaConstruida', 'habitaciones', 'banos', 'cocheras', 'comision']
-            .forEach(f => { if (raw[f] !== undefined) updates[f] = limpiarNumero(raw[f]); });
+        // Definimos exactamente qué campos permitimos actualizar para evitar ruidos de datos
+        const camposNumeros = ['precio', 'mantenimiento', 'area', 'areaConstruida', 'habitaciones', 'banos', 'cocheras', 'comision'];
+        const camposBools = ['testimonio', 'hr', 'pu', 'impuestoPredial', 'arbitrios', 'copiaLiteral', 'cri', 'reciboAguaLuz', 'revision'];
+        const camposFechas = ['fechaCaptacion', 'inicioContrato', 'finContrato'];
+        const camposTextos = ['tipo', 'modalidad', 'ubicacion', 'direccion', 'moneda', 'descripcion', 'detalles', 'videoUrl', 'mapaUrl', 'pdfUrl', 'tipoContrato', 'asesor', 'partidaRegistral', 'partidaAdicional', 'partidaCochera', 'partidaDeposito', 'link1', 'link2', 'link3', 'link4', 'link5', 'observaciones'];
 
-        ['testimonio', 'hr', 'pu', 'impuestoPredial', 'arbitrios', 'copiaLiteral', 'cri', 'reciboAguaLuz', 'revision']
-            .forEach(f => { if (raw[f] !== undefined) updates[f] = parseBoolean(raw[f]); });
+        camposNumeros.forEach(f => { if (raw[f] !== undefined) updates[f] = limpiarNumero(raw[f]); });
+        camposBools.forEach(f => { if (raw[f] !== undefined) updates[f] = parseBoolean(raw[f]); });
+        camposFechas.forEach(f => { if (raw[f] !== undefined) updates[f] = limpiarFecha(raw[f]); });
+        camposTextos.forEach(f => { if (raw[f] !== undefined) updates[f] = raw[f]; });
 
-        ['fechaCaptacion', 'inicioContrato', 'finContrato']
-            .forEach(f => { if (raw[f] !== undefined) updates[f] = limpiarFecha(raw[f]); });
-
-        ['tipo', 'modalidad', 'ubicacion', 'direccion', 'moneda', 'descripcion', 
-         'detalles', 'videoUrl', 'mapaUrl', 'pdfUrl', 'tipoContrato', 'asesor',
-         'partidaRegistral', 'partidaAdicional', 'partidaCochera', 'partidaDeposito',
-         'link1', 'link2', 'link3', 'link4', 'link5', 'observaciones', 'documentosUrls'].forEach(f => { 
-             if (raw[f] !== undefined) updates[f] = raw[f]; 
-         });
+        // Manejo especial de documentosUrls para asegurar que se guarde como objeto JSON
+        if (raw.documentosUrls) {
+            updates.documentosUrls = typeof raw.documentosUrls === 'string' 
+                ? JSON.parse(raw.documentosUrls) 
+                : raw.documentosUrls;
+        }
 
         await propiedad.update(updates);
+        
+        // Recargamos la propiedad con sus relaciones para devolverla limpia
         const actualizada = await Propiedad.findByPk(id, { include: [{ model: Propietario }] });
-        res.json({ message: 'Actualizada', propiedad: actualizada });
+        res.json({ message: 'Actualizada correctamente', propiedad: actualizada });
+
     } catch (e: any) {
-        res.status(500).json({ message: 'Error al actualizar', error: e.message });
+        console.error("❌ Error en updatePropiedad:", e);
+        res.status(500).json({ message: 'Error al actualizar propiedad', detalle: e.message });
     }
 };
 
+// 5. CAMBIAR ESTADO
 export const toggleEstadoPropiedad = async (req: Request, res: Response) => {
     try {
         const p = await Propiedad.findByPk(req.params.id);
@@ -157,6 +168,7 @@ export const toggleEstadoPropiedad = async (req: Request, res: Response) => {
     } catch (e) { res.status(500).json({ message: 'Error' }); }
 };
 
+// 6. ELIMINAR PROPIEDAD
 export const eliminarPropiedad = async (req: Request, res: Response) => {
     try {
         const p = await Propiedad.findByPk(req.params.id);
@@ -166,6 +178,7 @@ export const eliminarPropiedad = async (req: Request, res: Response) => {
     } catch (e) { res.status(500).json({ message: 'Error' }); }
 };
 
+// 7. SUBIR PDF DOCUMENTO
 export const subirPdfDocumento = async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
@@ -177,6 +190,8 @@ export const subirPdfDocumento = async (req: Request, res: Response) => {
         if (!propiedad) return res.status(404).json({ message: 'No encontrada' });
 
         const fileUrl = `/${file.path.replace(/\\/g, '/')}`;
+        
+        // Lógica de actualización del objeto documentosUrls
         let actuales = (propiedad as any).documentosUrls || {};
         if (typeof actuales === 'string') {
             try { actuales = JSON.parse(actuales); } catch (e) { actuales = {}; }
@@ -187,6 +202,7 @@ export const subirPdfDocumento = async (req: Request, res: Response) => {
 
         res.json({ message: 'PDF adjuntado', url: fileUrl, documentosUrls: nuevosDocumentos });
     } catch (e: any) {
-        res.status(500).json({ message: 'Error al subir', error: e.message });
+        console.error("❌ Error al subir PDF:", e);
+        res.status(500).json({ message: 'Error en el servidor al subir PDF', error: e.message });
     }
 };
