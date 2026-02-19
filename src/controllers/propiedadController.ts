@@ -45,7 +45,7 @@ export const crearPropiedad = async (req: Request, res: Response) => {
         const rawBody = req.body;
         const { nombre, dni, celular1, fechaNacimiento, ...resto } = rawBody;
 
-        let datosPropiedad = {
+        let datosPropiedad: any = {
             ...resto,
             precio: limpiarNumero(rawBody.precio),
             moneda: rawBody.moneda || 'USD',
@@ -197,7 +197,7 @@ export const eliminarPropiedad = async (req: Request, res: Response) => {
     } catch (e) { res.status(500).json({ message: 'Error' }); }
 };
 
-// 7. SUBIR PDF DOCUMENTO (NUEVO)
+// 7. SUBIR PDF DOCUMENTO
 export const subirPdfDocumento = async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
@@ -209,17 +209,19 @@ export const subirPdfDocumento = async (req: Request, res: Response) => {
         const propiedad = await Propiedad.findByPk(id);
         if (!propiedad) return res.status(404).json({ message: 'Propiedad no encontrada' });
 
-        const fileUrl = file.path.startsWith('http') ? file.path : `/${file.path.replace(/\\/g, '/')}`;
+        const fileUrl = `/${file.path.replace(/\\/g, '/')}`;
 
-        let documentosUrls = (propiedad as any).documentosUrls || {};
-        if (typeof documentosUrls === 'string') {
-            try { documentosUrls = JSON.parse(documentosUrls); } catch (e) { documentosUrls = {}; }
+        // Obtenemos el objeto actual y lo actualizamos de forma segura
+        let actuales = (propiedad as any).documentosUrls || {};
+        if (typeof actuales === 'string') {
+            try { actuales = JSON.parse(actuales); } catch (e) { actuales = {}; }
         }
 
-        documentosUrls[documentKey] = fileUrl;
-        await propiedad.update({ documentosUrls });
+        const nuevosDocumentos = { ...actuales, [documentKey]: fileUrl };
 
-        res.json({ message: 'PDF adjuntado con éxito', url: fileUrl, documentosUrls });
+        await propiedad.update({ documentosUrls: nuevosDocumentos });
+
+        res.json({ message: 'PDF adjuntado con éxito', url: fileUrl, documentosUrls: nuevosDocumentos });
     } catch (e: any) {
         console.error("❌ Error subida PDF:", e);
         res.status(500).json({ message: 'Error en el servidor al subir PDF', error: e.message });
