@@ -156,23 +156,17 @@ export const updatePropiedad = async (req: Request, res: Response) => {
 
         if (raw.documentosUrls !== undefined) {
             updates[mapeoEspecial.documentosUrls] = typeof raw.documentosUrls === 'string' 
-                ? JSON.parse(raw.documentosUrls) 
-                : raw.documentosUrls;
+                ? JSON.parse(raw.documentosUrls) : raw.documentosUrls;
         }
 
+        // Actualizamos solo los campos de la propiedad, ignoramos propietariosIds si vienen
         await propiedad.update(updates);
-
-        // LÓGICA AGREGADA: Actualizar relación de propietarios
-        if (raw.propietariosIds && Array.isArray(raw.propietariosIds)) {
-            // @ts-ignore
-            await propiedad.setPropietarios(raw.propietariosIds);
-        }
         
         const actualizada = await Propiedad.findByPk(id, { include: [{ model: Propietario }] });
         res.json({ message: 'Actualizada correctamente', propiedad: actualizada });
 
     } catch (e: any) {
-        console.error("❌ ERROR CRÍTICO EN UPDATE:", e);
+        console.error("❌ ERROR EN UPDATE:", e);
         res.status(500).json({ message: 'Error de base de datos', error: e.message });
     }
 };
