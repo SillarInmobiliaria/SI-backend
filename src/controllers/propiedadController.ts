@@ -90,7 +90,8 @@ export const crearPropiedad = async (req: Request, res: Response) => {
         await t.commit();
         res.status(201).json({ message: 'Creada exitosamente', data: nueva });
     } catch (e: any) {
-        await t.rollback();
+        if (t) await t.rollback();
+        console.error("Error Crear:", e);
         res.status(500).json({ message: 'Error al crear', error: e.message });
     }
 };
@@ -128,33 +129,26 @@ export const updatePropiedad = async (req: Request, res: Response) => {
         const raw = req.body;
         const updates: any = {};
 
-        // Definimos exactamente qué campos permitimos actualizar para evitar ruidos de datos
-        const camposNumeros = ['precio', 'mantenimiento', 'area', 'areaConstruida', 'habitaciones', 'banos', 'cocheras', 'comision'];
-        const camposBools = ['testimonio', 'hr', 'pu', 'impuestoPredial', 'arbitrios', 'copiaLiteral', 'cri', 'reciboAguaLuz', 'revision'];
-        const camposFechas = ['fechaCaptacion', 'inicioContrato', 'finContrato'];
-        const camposTextos = ['tipo', 'modalidad', 'ubicacion', 'direccion', 'moneda', 'descripcion', 'detalles', 'videoUrl', 'mapaUrl', 'pdfUrl', 'tipoContrato', 'asesor', 'partidaRegistral', 'partidaAdicional', 'partidaCochera', 'partidaDeposito', 'link1', 'link2', 'link3', 'link4', 'link5', 'observaciones'];
+        // 1. Filtro de campos permitidos para evitar basura
+        const camposNum = ['precio', 'mantenimiento', 'area', 'areaConstruida', 'habitaciones', 'banos', 'cocheras', 'comision'];
+        const camposBool = ['testimonio', 'hr', 'pu', 'impuestoPredial', 'arbitrios', 'copiaLiteral', 'cri', 'reciboAguaLuz', 'revision'];
+        const camposFecha = ['fechaCaptacion', 'inicioContrato', 'finContrato'];
+        const camposTexto = ['tipo', 'modalidad', 'ubicacion', 'direccion', 'moneda', 'descripcion', 'detalles', 'videoUrl', 'mapaUrl', 'pdfUrl', 'tipoContrato', 'asesor', 'partidaRegistral', 'partidaAdicional', 'partidaCochera', 'partidaDeposito', 'link1', 'link2', 'link3', 'link4', 'link5', 'observaciones', 'documentosUrls'];
 
-        camposNumeros.forEach(f => { if (raw[f] !== undefined) updates[f] = limpiarNumero(raw[f]); });
-        camposBools.forEach(f => { if (raw[f] !== undefined) updates[f] = parseBoolean(raw[f]); });
-        camposFechas.forEach(f => { if (raw[f] !== undefined) updates[f] = limpiarFecha(raw[f]); });
-        camposTextos.forEach(f => { if (raw[f] !== undefined) updates[f] = raw[f]; });
+        camposNum.forEach(f => { if (raw[f] !== undefined) updates[f] = limpiarNumero(raw[f]); });
+        camposBool.forEach(f => { if (raw[f] !== undefined) updates[f] = parseBoolean(raw[f]); });
+        camposFecha.forEach(f => { if (raw[f] !== undefined) updates[f] = limpiarFecha(raw[f]); });
+        camposTexto.forEach(f => { if (raw[f] !== undefined) updates[f] = raw[f]; });
 
-        // Manejo especial de documentosUrls para asegurar que se guarde como objeto JSON
-        if (raw.documentosUrls) {
-            updates.documentosUrls = typeof raw.documentosUrls === 'string' 
-                ? JSON.parse(raw.documentosUrls) 
-                : raw.documentosUrls;
-        }
-
+        // 2. Ejecutar actualización física
         await propiedad.update(updates);
         
-        // Recargamos la propiedad con sus relaciones para devolverla limpia
         const actualizada = await Propiedad.findByPk(id, { include: [{ model: Propietario }] });
         res.json({ message: 'Actualizada correctamente', propiedad: actualizada });
 
     } catch (e: any) {
         console.error("❌ Error en updatePropiedad:", e);
-        res.status(500).json({ message: 'Error al actualizar propiedad', detalle: e.message });
+        res.status(500).json({ message: 'Error de base de datos', error: e.message });
     }
 };
 
@@ -178,31 +172,36 @@ export const eliminarPropiedad = async (req: Request, res: Response) => {
     } catch (e) { res.status(500).json({ message: 'Error' }); }
 };
 
-// 7. SUBIR PDF DOCUMENTO
+// 7. SUBIR PDF DOCUMENTO (BLINDADO)
 export const subirPdfDocumento = async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
         const { documentKey } = req.body; 
         const file = req.file;
+
         if (!file) return res.status(400).json({ message: 'No se recibió archivo' });
 
         const propiedad = await Propiedad.findByPk(id);
-        if (!propiedad) return res.status(404).json({ message: 'No encontrada' });
+        if (!propiedad) return res.status(404).json({ message: 'Propiedad no encontrada' });
 
         const fileUrl = `/${file.path.replace(/\\/g, '/')}`;
-        
-        // Lógica de actualización del objeto documentosUrls
-        let actuales = (propiedad as any).documentosUrls || {};
-        if (typeof actuales === 'string') {
-            try { actuales = JSON.parse(actuales); } catch (e) { actuales = {}; }
-        }
 
+        // Obtener el objeto actual de URLs
+        let actuales = (propiedad as any).documentosUrls || {};
+        
+        // IMPORTANTE: Clonar el objeto para que Sequelize reconozca el cambio de valor
         const nuevosDocumentos = { ...actuales, [documentKey]: fileUrl };
+
         await propiedad.update({ documentosUrls: nuevosDocumentos });
 
-        res.json({ message: 'PDF adjuntado', url: fileUrl, documentosUrls: nuevosDocumentos });
+        res.json({ 
+            message: 'PDF adjuntado con éxito', 
+            url: fileUrl, 
+            documentosUrls: nuevosDocumentos 
+        });
+
     } catch (e: any) {
         console.error("❌ Error al subir PDF:", e);
-        res.status(500).json({ message: 'Error en el servidor al subir PDF', error: e.message });
+        res.status(500).json({ message: 'Error interno al procesar PDF', error: e.message });
     }
 };

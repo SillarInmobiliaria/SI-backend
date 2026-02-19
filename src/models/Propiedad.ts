@@ -5,11 +5,7 @@ class Propiedad extends Model {}
 
 Propiedad.init(
   {
-    id: {
-      type: DataTypes.UUID,
-      defaultValue: DataTypes.UUIDV4,
-      primaryKey: true,
-    },
+    id: { type: DataTypes.UUID, defaultValue: DataTypes.UUIDV4, primaryKey: true },
     tipo: { type: DataTypes.STRING, allowNull: false },
     modalidad: { type: DataTypes.STRING, allowNull: false },
     ubicacion: { type: DataTypes.STRING, allowNull: false },
@@ -29,9 +25,9 @@ Propiedad.init(
     videoUrl: { type: DataTypes.STRING, allowNull: true },
     mapaUrl: { type: DataTypes.TEXT, allowNull: true },
     pdfUrl: { type: DataTypes.STRING, allowNull: true },
-
-    // COLUMNA VITAL PARA AUDITORÍA
-    documentosUrls: { type: DataTypes.JSON, defaultValue: {} },
+    
+    // ESTE CAMPO DEBE SER JSONB EN NEON
+    documentosUrls: { type: DataTypes.JSONB, defaultValue: {} },
 
     link1: { type: DataTypes.STRING, allowNull: true },
     link2: { type: DataTypes.STRING, allowNull: true },
@@ -61,11 +57,7 @@ Propiedad.init(
     activo: { type: DataTypes.BOOLEAN, defaultValue: true },
     observaciones: { type: DataTypes.TEXT, allowNull: true }
   },
-  {
-    sequelize: db,
-    modelName: 'Propiedad',
-    tableName: 'propiedades',
-  }
+  { sequelize: db, modelName: 'Propiedad', tableName: 'propiedades' }
 );
 
 export default Propiedad;
