@@ -119,7 +119,7 @@ export const getPropiedad = async (req: Request, res: Response) => {
     } catch (e) { res.status(500).json({ message: 'Error al obtener detalle' }); }
 };
 
-// 4. ACTUALIZAR PROPIEDAD (CORREGIDO CON MAPEO FORZADO PARA NEON)
+// 4. ACTUALIZAR PROPIEDAD
 export const updatePropiedad = async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
@@ -129,30 +129,24 @@ export const updatePropiedad = async (req: Request, res: Response) => {
         const raw = req.body;
         const updates: any = {};
 
-        // Mapeo manual de campos problemáticos (mayúsculas/minúsculas en PostgreSQL)
         const mapeoEspecial: any = {
             cri: 'cri',
             reciboAguaLuz: 'reciboagualuz',
             documentosUrls: 'documentosurls'
         };
 
-        // 1. Números
         ['precio', 'mantenimiento', 'area', 'areaConstruida', 'habitaciones', 'banos', 'cocheras', 'comision']
             .forEach(f => { if (raw[f] !== undefined) updates[f] = limpiarNumero(raw[f]); });
 
-        // 2. Booleanos Estándar
         ['testimonio', 'hr', 'pu', 'impuestoPredial', 'arbitrios', 'copiaLiteral', 'revision']
             .forEach(f => { if (raw[f] !== undefined) updates[f] = parseBoolean(raw[f]); });
 
-        // 3. Booleanos con mapeo forzado (Alquiler)
         if (raw.cri !== undefined) updates[mapeoEspecial.cri] = parseBoolean(raw.cri);
         if (raw.reciboAguaLuz !== undefined) updates[mapeoEspecial.reciboAguaLuz] = parseBoolean(raw.reciboAguaLuz);
 
-        // 4. Fechas
         ['fechaCaptacion', 'inicioContrato', 'finContrato']
             .forEach(f => { if (raw[f] !== undefined) updates[f] = limpiarFecha(raw[f]); });
 
-        // 5. Textos y el objeto JSON de URLs
         ['tipo', 'modalidad', 'ubicacion', 'direccion', 'moneda', 'descripcion', 
          'detalles', 'videoUrl', 'mapaUrl', 'pdfUrl', 'tipoContrato', 'asesor',
          'partidaRegistral', 'partidaAdicional', 'partidaCochera', 'partidaDeposito',
@@ -166,8 +160,13 @@ export const updatePropiedad = async (req: Request, res: Response) => {
                 : raw.documentosUrls;
         }
 
-        // Ejecutar actualización
         await propiedad.update(updates);
+
+        // LÓGICA AGREGADA: Actualizar relación de propietarios
+        if (raw.propietariosIds && Array.isArray(raw.propietariosIds)) {
+            // @ts-ignore
+            await propiedad.setPropietarios(raw.propietariosIds);
+        }
         
         const actualizada = await Propiedad.findByPk(id, { include: [{ model: Propietario }] });
         res.json({ message: 'Actualizada correctamente', propiedad: actualizada });
@@ -198,43 +197,27 @@ export const eliminarPropiedad = async (req: Request, res: Response) => {
     } catch (e) { res.status(500).json({ message: 'Error' }); }
 };
 
-// 7. SUBIR PDF DOCUMENTO (CORREGIDO PARA PERSISTENCIA)
+// 7. SUBIR PDF DOCUMENTO
 export const subirPdfDocumento = async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
         const { documentKey } = req.body; 
         const file = req.file;
-
         if (!file) return res.status(400).json({ message: 'No se recibió archivo' });
-
         const propiedad = await Propiedad.findByPk(id);
         if (!propiedad) return res.status(404).json({ message: 'No encontrada' });
-
         const fileUrl = `/${file.path.replace(/\\/g, '/')}`;
-
-        // Acceso forzado por nombre de columna en minúscula si es necesario
         let actuales = (propiedad as any).documentosurls || (propiedad as any).documentosUrls || {};
-        
         if (typeof actuales === 'string') {
             try { actuales = JSON.parse(actuales); } catch (e) { actuales = {}; }
         }
-
         const nuevosDocumentos = { ...actuales, [documentKey]: fileUrl };
-
-        // Intentamos guardar en ambas variantes por si acaso
         await propiedad.update({ 
             documentosurls: nuevosDocumentos,
             documentosUrls: nuevosDocumentos 
         });
-
-        res.json({ 
-            message: 'PDF adjuntado con éxito', 
-            url: fileUrl, 
-            documentosUrls: nuevosDocumentos 
-        });
-
+        res.json({ message: 'PDF adjuntado con éxito', url: fileUrl, documentosUrls: nuevosDocumentos });
     } catch (e: any) {
-        console.error("❌ Error al subir PDF:", e);
         res.status(500).json({ message: 'Error en el servidor al subir PDF', error: e.message });
     }
 };
