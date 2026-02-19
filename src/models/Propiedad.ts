@@ -16,14 +16,11 @@ Propiedad.init(
     ubicacion: { type: DataTypes.STRING, allowNull: false },
     direccion: { type: DataTypes.STRING, allowNull: true },
     
-    // DECIMAL(12, 2) es perfecto para precio
     precio: { type: DataTypes.DECIMAL(12, 2), allowNull: false },
     moneda: { type: DataTypes.STRING, defaultValue: 'USD' },
     
-    // Mantenimiento (Para departamentos)
     mantenimiento: { type: DataTypes.DECIMAL(10, 2), allowNull: true },
 
-    // CAMBIO: Usamos DECIMAL en lugar de FLOAT para mayor precisión en m²
     area: { type: DataTypes.DECIMAL(10, 2), allowNull: true },
     areaConstruida: { type: DataTypes.DECIMAL(10, 2), allowNull: true },
     
@@ -38,6 +35,9 @@ Propiedad.init(
     videoUrl: { type: DataTypes.STRING, allowNull: true },
     mapaUrl: { type: DataTypes.TEXT, allowNull: true },
     pdfUrl: { type: DataTypes.STRING, allowNull: true },
+
+    // NUEVO: Para guardar las rutas de los PDFs de auditoría
+    documentosUrls: { type: DataTypes.JSON, defaultValue: {} },
 
     link1: { type: DataTypes.STRING, allowNull: true },
     link2: { type: DataTypes.STRING, allowNull: true },
@@ -64,7 +64,6 @@ Propiedad.init(
     arbitrios: { type: DataTypes.BOOLEAN, defaultValue: false },
     copiaLiteral: { type: DataTypes.BOOLEAN, defaultValue: false },
     
-    // NUEVOS CAMPOS PARA ALQUILER
     cri: { type: DataTypes.BOOLEAN, defaultValue: false },
     reciboAguaLuz: { type: DataTypes.BOOLEAN, defaultValue: false },
 
@@ -74,7 +73,6 @@ Propiedad.init(
     usuarioId: { type: DataTypes.UUID, allowNull: true },
     activo: { type: DataTypes.BOOLEAN, defaultValue: true },
     
-    // OBSERVACIONES / NOTAS ADICIONALES
     observaciones: { type: DataTypes.TEXT, allowNull: true }
   },
   {

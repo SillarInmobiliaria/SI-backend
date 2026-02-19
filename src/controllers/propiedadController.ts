@@ -26,7 +26,6 @@ const parseBoolean = (valor: any) => {
     return false;
 };
 
-// --- FUNCIÓN PARA PROCESAR URLS DE IMÁGENES ---
 const obtenerUrlImagen = (file: Express.Multer.File | undefined) => {
     if (!file) return null;
     return file.path.startsWith('http') ? file.path : file.path.replace(/\\/g, '/');
@@ -115,19 +114,14 @@ export const obtenerPropiedades = async (req: Request, res: Response) => {
     try {
         const usuario = (req as any).user;
         let whereClause: any = {};
-        
-        if (usuario && usuario.rol !== 'ADMIN') {
-            whereClause = { usuarioId: usuario.id };
-        }
+        if (usuario && usuario.rol !== 'ADMIN') whereClause = { usuarioId: usuario.id };
 
         const propiedades = await Propiedad.findAll({ 
             where: whereClause, 
             include: [{ model: Propietario }], 
             order: [['createdAt', 'DESC']] 
         });
-
         res.json(propiedades);
-
     } catch (e) { 
         console.error(e);
         res.status(500).json({ message: 'Error al obtener propiedades' }); 
@@ -138,13 +132,9 @@ export const obtenerPropiedades = async (req: Request, res: Response) => {
 export const getPropiedad = async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
-        const propiedad = await Propiedad.findByPk(id, { 
-            include: [{ model: Propietario }] 
-        });
-
+        const propiedad = await Propiedad.findByPk(id, { include: [{ model: Propietario }] });
         if (!propiedad) return res.status(404).json({ message: 'Propiedad no encontrada' });
         res.json(propiedad);
-
     } catch (e) { 
         console.error(e);
         res.status(500).json({ message: 'Error al obtener detalle' }); 
@@ -192,7 +182,6 @@ export const toggleEstadoPropiedad = async (req: Request, res: Response) => {
     try {
         const p = await Propiedad.findByPk(req.params.id);
         if (!p) return res.status(404).json({ message: 'No existe' });
-        
         await p.update({ activo: req.body.activo });
         res.json({ message: 'Estado actualizado' });
     } catch (e) { res.status(500).json({ message: 'Error' }); }
@@ -203,7 +192,6 @@ export const eliminarPropiedad = async (req: Request, res: Response) => {
     try {
         const p = await Propiedad.findByPk(req.params.id);
         if (!p) return res.status(404).json({ message: 'No existe' });
-        
         await p.destroy();
         res.json({ message: 'Propiedad eliminada' });
     } catch (e) { res.status(500).json({ message: 'Error' }); }
@@ -221,29 +209,17 @@ export const subirPdfDocumento = async (req: Request, res: Response) => {
         const propiedad = await Propiedad.findByPk(id);
         if (!propiedad) return res.status(404).json({ message: 'Propiedad no encontrada' });
 
-        // Normalizar la ruta del archivo
         const fileUrl = file.path.startsWith('http') ? file.path : `/${file.path.replace(/\\/g, '/')}`;
 
-        // Obtener documentosUrls actual o inicializarlo
         let documentosUrls = (propiedad as any).documentosUrls || {};
-        
-        // Manejar si documentosUrls es un string (en algunas bases de datos)
         if (typeof documentosUrls === 'string') {
             try { documentosUrls = JSON.parse(documentosUrls); } catch (e) { documentosUrls = {}; }
         }
 
-        // Guardar la URL bajo la clave enviada (ej: testimonio, hr, pu...)
         documentosUrls[documentKey] = fileUrl;
-
-        // Actualizar el registro en la base de datos
         await propiedad.update({ documentosUrls });
 
-        res.json({ 
-            message: 'PDF adjuntado con éxito', 
-            url: fileUrl,
-            documentosUrls 
-        });
-
+        res.json({ message: 'PDF adjuntado con éxito', url: fileUrl, documentosUrls });
     } catch (e: any) {
         console.error("❌ Error subida PDF:", e);
         res.status(500).json({ message: 'Error en el servidor al subir PDF', error: e.message });
