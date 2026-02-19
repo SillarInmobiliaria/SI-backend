@@ -106,7 +106,7 @@ export const obtenerPropiedades = async (req: Request, res: Response) => {
             where: whereClause, include: [{ model: Propietario }], order: [['createdAt', 'DESC']] 
         });
         res.json(propiedades);
-    } catch (e) { res.status(500).json({ message: 'Error' }); }
+    } catch (e) { res.status(500).json({ message: 'Error al obtener propiedades' }); }
 };
 
 // 3. OBTENER DETALLE
@@ -116,10 +116,10 @@ export const getPropiedad = async (req: Request, res: Response) => {
         const propiedad = await Propiedad.findByPk(id, { include: [{ model: Propietario }] });
         if (!propiedad) return res.status(404).json({ message: 'No encontrada' });
         res.json(propiedad);
-    } catch (e) { res.status(500).json({ message: 'Error' }); }
+    } catch (e) { res.status(500).json({ message: 'Error al obtener detalle' }); }
 };
 
-// 4. ACTUALIZAR PROPIEDAD (CORREGIDO Y BLINDADO)
+// 4. ACTUALIZAR PROPIEDAD (CORREGIDO CON MAPEO FORZADO PARA NEON)
 export const updatePropiedad = async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
@@ -129,25 +129,51 @@ export const updatePropiedad = async (req: Request, res: Response) => {
         const raw = req.body;
         const updates: any = {};
 
-        // 1. Filtro de campos permitidos para evitar basura
-        const camposNum = ['precio', 'mantenimiento', 'area', 'areaConstruida', 'habitaciones', 'banos', 'cocheras', 'comision'];
-        const camposBool = ['testimonio', 'hr', 'pu', 'impuestoPredial', 'arbitrios', 'copiaLiteral', 'cri', 'reciboAguaLuz', 'revision'];
-        const camposFecha = ['fechaCaptacion', 'inicioContrato', 'finContrato'];
-        const camposTexto = ['tipo', 'modalidad', 'ubicacion', 'direccion', 'moneda', 'descripcion', 'detalles', 'videoUrl', 'mapaUrl', 'pdfUrl', 'tipoContrato', 'asesor', 'partidaRegistral', 'partidaAdicional', 'partidaCochera', 'partidaDeposito', 'link1', 'link2', 'link3', 'link4', 'link5', 'observaciones', 'documentosUrls'];
+        // Mapeo manual de campos problemáticos (mayúsculas/minúsculas en PostgreSQL)
+        const mapeoEspecial: any = {
+            cri: 'cri',
+            reciboAguaLuz: 'reciboagualuz',
+            documentosUrls: 'documentosurls'
+        };
 
-        camposNum.forEach(f => { if (raw[f] !== undefined) updates[f] = limpiarNumero(raw[f]); });
-        camposBool.forEach(f => { if (raw[f] !== undefined) updates[f] = parseBoolean(raw[f]); });
-        camposFecha.forEach(f => { if (raw[f] !== undefined) updates[f] = limpiarFecha(raw[f]); });
-        camposTexto.forEach(f => { if (raw[f] !== undefined) updates[f] = raw[f]; });
+        // 1. Números
+        ['precio', 'mantenimiento', 'area', 'areaConstruida', 'habitaciones', 'banos', 'cocheras', 'comision']
+            .forEach(f => { if (raw[f] !== undefined) updates[f] = limpiarNumero(raw[f]); });
 
-        // 2. Ejecutar actualización física
+        // 2. Booleanos Estándar
+        ['testimonio', 'hr', 'pu', 'impuestoPredial', 'arbitrios', 'copiaLiteral', 'revision']
+            .forEach(f => { if (raw[f] !== undefined) updates[f] = parseBoolean(raw[f]); });
+
+        // 3. Booleanos con mapeo forzado (Alquiler)
+        if (raw.cri !== undefined) updates[mapeoEspecial.cri] = parseBoolean(raw.cri);
+        if (raw.reciboAguaLuz !== undefined) updates[mapeoEspecial.reciboAguaLuz] = parseBoolean(raw.reciboAguaLuz);
+
+        // 4. Fechas
+        ['fechaCaptacion', 'inicioContrato', 'finContrato']
+            .forEach(f => { if (raw[f] !== undefined) updates[f] = limpiarFecha(raw[f]); });
+
+        // 5. Textos y el objeto JSON de URLs
+        ['tipo', 'modalidad', 'ubicacion', 'direccion', 'moneda', 'descripcion', 
+         'detalles', 'videoUrl', 'mapaUrl', 'pdfUrl', 'tipoContrato', 'asesor',
+         'partidaRegistral', 'partidaAdicional', 'partidaCochera', 'partidaDeposito',
+         'link1', 'link2', 'link3', 'link4', 'link5', 'observaciones'].forEach(f => { 
+             if (raw[f] !== undefined) updates[f] = raw[f]; 
+         });
+
+        if (raw.documentosUrls !== undefined) {
+            updates[mapeoEspecial.documentosUrls] = typeof raw.documentosUrls === 'string' 
+                ? JSON.parse(raw.documentosUrls) 
+                : raw.documentosUrls;
+        }
+
+        // Ejecutar actualización
         await propiedad.update(updates);
         
         const actualizada = await Propiedad.findByPk(id, { include: [{ model: Propietario }] });
         res.json({ message: 'Actualizada correctamente', propiedad: actualizada });
 
     } catch (e: any) {
-        console.error("❌ Error en updatePropiedad:", e);
+        console.error("❌ ERROR CRÍTICO EN UPDATE:", e);
         res.status(500).json({ message: 'Error de base de datos', error: e.message });
     }
 };
@@ -172,7 +198,7 @@ export const eliminarPropiedad = async (req: Request, res: Response) => {
     } catch (e) { res.status(500).json({ message: 'Error' }); }
 };
 
-// 7. SUBIR PDF DOCUMENTO (BLINDADO)
+// 7. SUBIR PDF DOCUMENTO (CORREGIDO PARA PERSISTENCIA)
 export const subirPdfDocumento = async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
@@ -182,17 +208,24 @@ export const subirPdfDocumento = async (req: Request, res: Response) => {
         if (!file) return res.status(400).json({ message: 'No se recibió archivo' });
 
         const propiedad = await Propiedad.findByPk(id);
-        if (!propiedad) return res.status(404).json({ message: 'Propiedad no encontrada' });
+        if (!propiedad) return res.status(404).json({ message: 'No encontrada' });
 
         const fileUrl = `/${file.path.replace(/\\/g, '/')}`;
 
-        // Obtener el objeto actual de URLs
-        let actuales = (propiedad as any).documentosUrls || {};
+        // Acceso forzado por nombre de columna en minúscula si es necesario
+        let actuales = (propiedad as any).documentosurls || (propiedad as any).documentosUrls || {};
         
-        // IMPORTANTE: Clonar el objeto para que Sequelize reconozca el cambio de valor
+        if (typeof actuales === 'string') {
+            try { actuales = JSON.parse(actuales); } catch (e) { actuales = {}; }
+        }
+
         const nuevosDocumentos = { ...actuales, [documentKey]: fileUrl };
 
-        await propiedad.update({ documentosUrls: nuevosDocumentos });
+        // Intentamos guardar en ambas variantes por si acaso
+        await propiedad.update({ 
+            documentosurls: nuevosDocumentos,
+            documentosUrls: nuevosDocumentos 
+        });
 
         res.json({ 
             message: 'PDF adjuntado con éxito', 
@@ -202,6 +235,6 @@ export const subirPdfDocumento = async (req: Request, res: Response) => {
 
     } catch (e: any) {
         console.error("❌ Error al subir PDF:", e);
-        res.status(500).json({ message: 'Error interno al procesar PDF', error: e.message });
+        res.status(500).json({ message: 'Error en el servidor al subir PDF', error: e.message });
     }
 };
