@@ -31,17 +31,14 @@ const obtenerUrlImagen = (file: Express.Multer.File | undefined) => {
     return file.path.startsWith('http') ? file.path : file.path.replace(/\\/g, '/');
 };
 
-// 1. CREAR PROPIEDAD
 export const crearPropiedad = async (req: Request, res: Response) => {
     const t = await Propiedad.sequelize!.transaction();
     try {
         const usuario = (req as any).user;
         const files = req.files as { [fieldname: string]: Express.Multer.File[] };
-        
         const fotoPrincipal = obtenerUrlImagen(files['fotoPrincipal']?.[0]);
         const pdfUrl = obtenerUrlImagen(files['pdf']?.[0]);
         let galeria: string[] = files['galeria'] ? files['galeria'].map(f => obtenerUrlImagen(f) as string) : [];
-
         const rawBody = req.body;
         const { nombre, dni, celular1, fechaNacimiento, ...resto } = rawBody;
 
@@ -77,71 +74,47 @@ export const crearPropiedad = async (req: Request, res: Response) => {
                  const nuevo = await Propietario.create({
                      nombre, dni, celular1, 
                      fechaNacimiento: limpiarFecha(fechaNacimiento), 
-                     celular2: rawBody.celular2, 
-                     email: rawBody.email, 
-                     direccion: rawBody.direccion
+                     celular2: rawBody.celular2, email: rawBody.email, direccion: rawBody.direccion
                  }, { transaction: t });
                  propId = nuevo.getDataValue('id');
              }
         }
 
         const nueva = await Propiedad.create({
-            ...datosPropiedad, 
-            fotoPrincipal, 
-            galeria, 
-            pdfUrl, 
-            usuarioId: usuario.id, 
-            activo: true, 
-            propietarioId: propId
+            ...datosPropiedad, fotoPrincipal, galeria, pdfUrl, usuarioId: usuario.id, activo: true, propietarioId: propId
         }, { transaction: t });
 
-        if (propId && (nueva as any).addPropietario) {
-            await (nueva as any).addPropietario(propId, { transaction: t });
-        }
+        if (propId && (nueva as any).addPropietario) await (nueva as any).addPropietario(propId, { transaction: t });
         
         await t.commit();
         res.status(201).json({ message: 'Creada exitosamente', data: nueva });
-
     } catch (e: any) {
         await t.rollback();
-        console.error("Error Crear:", e);
-        res.status(500).json({ message: 'Error al crear propiedad', error: e.message });
+        res.status(500).json({ message: 'Error al crear', error: e.message });
     }
 };
 
-// 2. OBTENER PROPIEDADES
 export const obtenerPropiedades = async (req: Request, res: Response) => {
     try {
         const usuario = (req as any).user;
         let whereClause: any = {};
         if (usuario && usuario.rol !== 'ADMIN') whereClause = { usuarioId: usuario.id };
-
         const propiedades = await Propiedad.findAll({ 
-            where: whereClause, 
-            include: [{ model: Propietario }], 
-            order: [['createdAt', 'DESC']] 
+            where: whereClause, include: [{ model: Propietario }], order: [['createdAt', 'DESC']] 
         });
         res.json(propiedades);
-    } catch (e) { 
-        console.error(e);
-        res.status(500).json({ message: 'Error al obtener propiedades' }); 
-    }
+    } catch (e) { res.status(500).json({ message: 'Error' }); }
 };
 
-// 3. OBTENER DETALLE
 export const getPropiedad = async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
         const propiedad = await Propiedad.findByPk(id, { include: [{ model: Propietario }] });
-        if (!propiedad) return res.status(404).json({ message: 'Propiedad no encontrada' });
+        if (!propiedad) return res.status(404).json({ message: 'No encontrada' });
         res.json(propiedad);
-    } catch (e) { 
-        console.error(e);
-        res.status(500).json({ message: 'Error al obtener detalle' }); 
-    }
+    } catch (e) { res.status(500).json({ message: 'Error' }); }
 };
 
-// 4. ACTUALIZAR PROPIEDAD
 export const updatePropiedad = async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
@@ -163,21 +136,18 @@ export const updatePropiedad = async (req: Request, res: Response) => {
         ['tipo', 'modalidad', 'ubicacion', 'direccion', 'moneda', 'descripcion', 
          'detalles', 'videoUrl', 'mapaUrl', 'pdfUrl', 'tipoContrato', 'asesor',
          'partidaRegistral', 'partidaAdicional', 'partidaCochera', 'partidaDeposito',
-         'link1', 'link2', 'link3', 'link4', 'link5', 'observaciones'].forEach(f => { 
+         'link1', 'link2', 'link3', 'link4', 'link5', 'observaciones', 'documentosUrls'].forEach(f => { 
              if (raw[f] !== undefined) updates[f] = raw[f]; 
          });
 
         await propiedad.update(updates);
-        const propiedadActualizada = await Propiedad.findByPk(id, { include: [{ model: Propietario }] });
-        res.json({ message: 'Actualizada correctamente', propiedad: propiedadActualizada });
-
+        const actualizada = await Propiedad.findByPk(id, { include: [{ model: Propietario }] });
+        res.json({ message: 'Actualizada', propiedad: actualizada });
     } catch (e: any) {
-        console.error("❌ Error Update:", e);
         res.status(500).json({ message: 'Error al actualizar', error: e.message });
     }
 };
 
-// 5. CAMBIAR ESTADO
 export const toggleEstadoPropiedad = async (req: Request, res: Response) => {
     try {
         const p = await Propiedad.findByPk(req.params.id);
@@ -187,43 +157,36 @@ export const toggleEstadoPropiedad = async (req: Request, res: Response) => {
     } catch (e) { res.status(500).json({ message: 'Error' }); }
 };
 
-// 6. ELIMINAR PROPIEDAD
 export const eliminarPropiedad = async (req: Request, res: Response) => {
     try {
         const p = await Propiedad.findByPk(req.params.id);
         if (!p) return res.status(404).json({ message: 'No existe' });
         await p.destroy();
-        res.json({ message: 'Propiedad eliminada' });
+        res.json({ message: 'Eliminada' });
     } catch (e) { res.status(500).json({ message: 'Error' }); }
 };
 
-// 7. SUBIR PDF DOCUMENTO
 export const subirPdfDocumento = async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
         const { documentKey } = req.body; 
         const file = req.file;
-
         if (!file) return res.status(400).json({ message: 'No se recibió archivo' });
 
         const propiedad = await Propiedad.findByPk(id);
-        if (!propiedad) return res.status(404).json({ message: 'Propiedad no encontrada' });
+        if (!propiedad) return res.status(404).json({ message: 'No encontrada' });
 
         const fileUrl = `/${file.path.replace(/\\/g, '/')}`;
-
-        // Obtenemos el objeto actual y lo actualizamos de forma segura
         let actuales = (propiedad as any).documentosUrls || {};
         if (typeof actuales === 'string') {
             try { actuales = JSON.parse(actuales); } catch (e) { actuales = {}; }
         }
 
         const nuevosDocumentos = { ...actuales, [documentKey]: fileUrl };
-
         await propiedad.update({ documentosUrls: nuevosDocumentos });
 
-        res.json({ message: 'PDF adjuntado con éxito', url: fileUrl, documentosUrls: nuevosDocumentos });
+        res.json({ message: 'PDF adjuntado', url: fileUrl, documentosUrls: nuevosDocumentos });
     } catch (e: any) {
-        console.error("❌ Error subida PDF:", e);
-        res.status(500).json({ message: 'Error en el servidor al subir PDF', error: e.message });
+        res.status(500).json({ message: 'Error al subir', error: e.message });
     }
 };
