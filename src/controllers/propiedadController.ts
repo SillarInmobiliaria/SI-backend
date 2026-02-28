@@ -28,7 +28,9 @@ const parseBoolean = (valor: any) => {
 
 const obtenerUrlImagen = (file: Express.Multer.File | undefined) => {
     if (!file) return null;
-    return file.path.startsWith('http') ? file.path : file.path.replace(/\\/g, '/');
+    // Normalizamos la ruta para que siempre use '/' y tenga un slash inicial
+    const path = file.path.replace(/\\/g, '/');
+    return path.startsWith('/') ? path : `/${path}`;
 };
 
 // 1. CREAR PROPIEDAD
@@ -37,9 +39,22 @@ export const crearPropiedad = async (req: Request, res: Response) => {
     try {
         const usuario = (req as any).user;
         const files = req.files as { [fieldname: string]: Express.Multer.File[] };
+        
+        // Imágenes
         const fotoPrincipal = obtenerUrlImagen(files['fotoPrincipal']?.[0]);
-        const pdfUrl = obtenerUrlImagen(files['pdf']?.[0]);
         let galeria: string[] = files['galeria'] ? files['galeria'].map(f => obtenerUrlImagen(f) as string) : [];
+
+        // Procesamiento de PDFs de Auditoría (file_testimonio, file_hr, etc.)
+        const documentosUrls: any = {};
+        const posiblesPDFs = ['testimonio', 'hr', 'pu', 'impuestoPredial', 'arbitrios', 'copiaLiteral', 'cri', 'reciboAguaLuz'];
+        
+        posiblesPDFs.forEach(doc => {
+            const fileKey = `file_${doc}`;
+            if (files[fileKey]) {
+                documentosUrls[doc] = obtenerUrlImagen(files[fileKey][0]);
+            }
+        });
+
         const rawBody = req.body;
         const { nombre, dni, celular1, fechaNacimiento, ...resto } = rawBody;
 
@@ -57,6 +72,10 @@ export const crearPropiedad = async (req: Request, res: Response) => {
             fechaCaptacion: limpiarFecha(rawBody.fechaCaptacion),
             inicioContrato: limpiarFecha(rawBody.inicioContrato),
             finContrato: limpiarFecha(rawBody.finContrato),
+            // Guardamos el objeto de documentos en ambos campos por compatibilidad de base de datos
+            documentosurls: documentosUrls,
+            documentosUrls: documentosUrls,
+            // Las observaciones vienen como JSON string desde el frontend
             observaciones: rawBody.observaciones || ''
         };
 
@@ -82,12 +101,18 @@ export const crearPropiedad = async (req: Request, res: Response) => {
         }
 
         const nueva = await Propiedad.create({
-            ...datosPropiedad, fotoPrincipal, galeria, pdfUrl, usuarioId: usuario.id, activo: true
+            ...datosPropiedad, 
+            fotoPrincipal, 
+            galeria, 
+            pdfUrl: obtenerUrlImagen(files['pdf']?.[0]), 
+            usuarioId: usuario.id, 
+            activo: true
         }, { transaction: t });
 
-        // Vincular propietarios: desde propietariosIds[] (formulario) o desde dni
+        // Vincular propietarios
         const ids = rawBody.propietariosIds ?? rawBody['propietariosIds[]'];
         const propietariosIds = Array.isArray(ids) ? ids.filter(Boolean) : (ids ? [String(ids)] : []);
+        
         if (propietariosIds.length > 0) {
             await (nueva as any).setPropietarios(propietariosIds, { transaction: t });
         } else if (propId && (nueva as any).addPropietario) {
@@ -98,8 +123,8 @@ export const crearPropiedad = async (req: Request, res: Response) => {
         res.status(201).json({ message: 'Creada exitosamente', data: nueva });
     } catch (e: any) {
         if (t) await t.rollback();
-        console.error("Error Crear:", e);
-        res.status(500).json({ message: 'Error al crear', error: e.message });
+        console.error("❌ ERROR CRÍTICO EN BACKEND (Crear):", e);
+        res.status(500).json({ message: 'Error al crear la propiedad', error: e.message });
     }
 };
 
@@ -166,7 +191,6 @@ export const updatePropiedad = async (req: Request, res: Response) => {
                 ? JSON.parse(raw.documentosUrls) : raw.documentosUrls;
         }
 
-        // Actualizamos solo los campos de la propiedad, ignoramos propietariosIds si vienen
         await propiedad.update(updates);
         
         const actualizada = await Propiedad.findByPk(id, { include: [{ model: Propietario }] });
@@ -198,25 +222,31 @@ export const eliminarPropiedad = async (req: Request, res: Response) => {
     } catch (e) { res.status(500).json({ message: 'Error' }); }
 };
 
-// 7. SUBIR PDF DOCUMENTO
+// 7. SUBIR PDF DOCUMENTO (Auditoría desde Detalle)
 export const subirPdfDocumento = async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
         const { documentKey } = req.body; 
         const file = req.file;
         if (!file) return res.status(400).json({ message: 'No se recibió archivo' });
+
         const propiedad = await Propiedad.findByPk(id);
         if (!propiedad) return res.status(404).json({ message: 'No encontrada' });
-        const fileUrl = `/${file.path.replace(/\\/g, '/')}`;
+
+        const fileUrl = obtenerUrlImagen(file);
+        
         let actuales = (propiedad as any).documentosurls || (propiedad as any).documentosUrls || {};
         if (typeof actuales === 'string') {
             try { actuales = JSON.parse(actuales); } catch (e) { actuales = {}; }
         }
+
         const nuevosDocumentos = { ...actuales, [documentKey]: fileUrl };
+        
         await propiedad.update({ 
             documentosurls: nuevosDocumentos,
             documentosUrls: nuevosDocumentos 
         });
+
         res.json({ message: 'PDF adjuntado con éxito', url: fileUrl, documentosUrls: nuevosDocumentos });
     } catch (e: any) {
         res.status(500).json({ message: 'Error en el servidor al subir PDF', error: e.message });

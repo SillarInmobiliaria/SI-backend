@@ -10,9 +10,9 @@ Propiedad.init(
     modalidad: { type: DataTypes.STRING, allowNull: false },
     ubicacion: { type: DataTypes.STRING, allowNull: false },
     direccion: { type: DataTypes.STRING, allowNull: true },
-    precio: { type: DataTypes.DECIMAL(12, 2), allowNull: false },
+    precio: { type: DataTypes.DECIMAL(15, 2), allowNull: false }, 
     moneda: { type: DataTypes.STRING, defaultValue: 'USD' },
-    mantenimiento: { type: DataTypes.DECIMAL(10, 2), allowNull: true },
+    mantenimiento: { type: DataTypes.DECIMAL(12, 2), allowNull: true },
     area: { type: DataTypes.DECIMAL(10, 2), allowNull: true },
     areaConstruida: { type: DataTypes.DECIMAL(10, 2), allowNull: true },
     habitaciones: { type: DataTypes.INTEGER, allowNull: true },
@@ -26,8 +26,8 @@ Propiedad.init(
     mapaUrl: { type: DataTypes.TEXT, allowNull: true },
     pdfUrl: { type: DataTypes.STRING, allowNull: true },
     
-    // ESTE CAMPO DEBE SER JSONB EN NEON
     documentosUrls: { type: DataTypes.JSONB, defaultValue: {} },
+    documentosurls: { type: DataTypes.JSONB, defaultValue: {} }, 
 
     link1: { type: DataTypes.STRING, allowNull: true },
     link2: { type: DataTypes.STRING, allowNull: true },
