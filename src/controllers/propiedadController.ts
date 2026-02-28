@@ -82,10 +82,17 @@ export const crearPropiedad = async (req: Request, res: Response) => {
         }
 
         const nueva = await Propiedad.create({
-            ...datosPropiedad, fotoPrincipal, galeria, pdfUrl, usuarioId: usuario.id, activo: true, propietarioId: propId
+            ...datosPropiedad, fotoPrincipal, galeria, pdfUrl, usuarioId: usuario.id, activo: true
         }, { transaction: t });
 
-        if (propId && (nueva as any).addPropietario) await (nueva as any).addPropietario(propId, { transaction: t });
+        // Vincular propietarios: desde propietariosIds[] (formulario) o desde dni
+        const ids = rawBody.propietariosIds ?? rawBody['propietariosIds[]'];
+        const propietariosIds = Array.isArray(ids) ? ids.filter(Boolean) : (ids ? [String(ids)] : []);
+        if (propietariosIds.length > 0) {
+            await (nueva as any).setPropietarios(propietariosIds, { transaction: t });
+        } else if (propId && (nueva as any).addPropietario) {
+            await (nueva as any).addPropietario(propId, { transaction: t });
+        }
         
         await t.commit();
         res.status(201).json({ message: 'Creada exitosamente', data: nueva });
