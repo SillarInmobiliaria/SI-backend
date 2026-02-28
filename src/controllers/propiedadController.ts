@@ -29,9 +29,15 @@ const parseBoolean = (valor: any) => {
 
 const obtenerUrlImagen = (file: Express.Multer.File | undefined) => {
     if (!file) return null;
+    
+    if (file.path.startsWith('http')) {
+        return file.path;
+    }
+    
     const path = file.path.replace(/\\/g, '/');
     return path.startsWith('/') ? path : `/${path}`;
 };
+
 
 // 1. CREAR PROPIEDAD
 export const crearPropiedad = async (req: Request, res: Response) => {
@@ -75,7 +81,6 @@ export const crearPropiedad = async (req: Request, res: Response) => {
             observaciones: rawBody.observaciones || ''
         };
 
-        // --- AGREGADOS LOS NUEVOS CAMPOS AL PARSEO BOOLEANO ---
         const bools = ['testimonio', 'hr', 'pu', 'impuestoPredial', 'arbitrios', 'copiaLiteral', 'cri', 'reciboAguaLuz', 'revision', 'exclusiva', 'renovable'];
         bools.forEach(f => { datosPropiedad[f] = parseBoolean(rawBody[f]); });
 
@@ -166,7 +171,6 @@ export const updatePropiedad = async (req: Request, res: Response) => {
         ['precio', 'mantenimiento', 'area', 'areaConstruida', 'habitaciones', 'banos', 'cocheras', 'comision']
             .forEach(f => { if (raw[f] !== undefined) updates[f] = limpiarNumero(raw[f]); });
 
-        // --- AGREGADOS LOS NUEVOS CAMPOS A LA ACTUALIZACIÓN ---
         ['testimonio', 'hr', 'pu', 'impuestoPredial', 'arbitrios', 'copiaLiteral', 'revision', 'exclusiva', 'renovable']
             .forEach(f => { if (raw[f] !== undefined) updates[f] = parseBoolean(raw[f]); });
 
