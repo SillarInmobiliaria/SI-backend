@@ -17,7 +17,7 @@ Propietario.init(
     dni: {
       type: DataTypes.STRING(8),
       allowNull: false,
-      unique: true, // Si intentas crear un DNI que ya existe, dará error
+      unique: true,
     },
     fechaNacimiento: {
       type: DataTypes.DATEONLY,

@@ -30,7 +30,7 @@ export const obtenerPropietarios = async (req: Request, res: Response) => {
     const usuario = (req as any).user;
     let whereClause: any = {};
 
-    // Si NO es Admin, solo ve SU data (Esto explica por qué tu lista sale vacía al inicio)
+    // Si NO es Admin, solo ve SU data
     if (usuario.rol !== 'ADMIN') {
         whereClause = { usuarioId: usuario.id };
     }
@@ -69,5 +69,30 @@ export const eliminarPropietario = async (req: Request, res: Response) => {
         res.json({ message: 'Eliminado' });
     } catch (error) {
         res.status(500).json({ message: 'Error al eliminar' });
+    }
+};
+
+// 5. ACTUALIZAR
+export const updatePropietario = async (req: Request, res: Response) => {
+    try {
+        const { id } = req.params;
+        const propietario = await Propietario.findByPk(id);
+        
+        if (!propietario) {
+            return res.status(404).json({ message: 'Propietario no encontrado' });
+        }
+
+        // Si mandaron fecha vacía, la volvemos null para que no falle la BD
+        const datosAActualizar = { ...req.body };
+        if (datosAActualizar.fechaNacimiento === '') {
+            datosAActualizar.fechaNacimiento = null;
+        }
+
+        await propietario.update(datosAActualizar);
+        
+        res.json({ message: 'Propietario actualizado con éxito', propietario });
+    } catch (error: any) {
+        console.error("❌ Error al actualizar propietario:", error);
+        res.status(500).json({ message: 'Error al actualizar', error: error.message });
     }
 };
