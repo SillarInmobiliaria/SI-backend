@@ -104,7 +104,9 @@ app.use('/api/cartera', carteraRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/feedback', feedbackRoutes);
 
-// --- FUNCIÓN DE EMERGENCIA ---
+// --- FUNCIÓN DE EMERGENCIA DESACTIVADA ---
+
+/*
 const crearUsuariosPorDefecto = async () => {
     try {
         console.log('🔄 Verificando acceso de Administrador...');
@@ -134,6 +136,8 @@ const crearUsuariosPorDefecto = async () => {
     }
 };
 
+*/
+
 const conectarDB = async () => {
     try {
         await db.authenticate();
@@ -145,7 +149,7 @@ const conectarDB = async () => {
         await db.sync({ alter: true }); 
         console.log('✅ Tablas Sincronizadas.');
 
-        await crearUsuariosPorDefecto(); 
+        // await crearUsuariosPorDefecto(); 
 
     } catch (error) {
         console.error('❌ Error conexión BD:', error);
