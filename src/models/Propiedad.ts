@@ -43,6 +43,10 @@ Propiedad.init(
     finContrato: { type: DataTypes.DATEONLY, allowNull: true },
     tipoContrato: { type: DataTypes.STRING, allowNull: true },
     comision: { type: DataTypes.FLOAT, allowNull: true },
+    
+    exclusiva: { type: DataTypes.BOOLEAN, defaultValue: false, allowNull: true },
+    renovable: { type: DataTypes.BOOLEAN, defaultValue: false, allowNull: true },
+
     testimonio: { type: DataTypes.BOOLEAN, defaultValue: false, allowNull: true },
     hr: { type: DataTypes.BOOLEAN, defaultValue: false, allowNull: true },
     pu: { type: DataTypes.BOOLEAN, defaultValue: false, allowNull: true },

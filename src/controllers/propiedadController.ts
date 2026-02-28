@@ -13,6 +13,7 @@ const limpiarFecha = (valor: any) => {
     return valor;
 };
 
+// Modificamos parseBoolean para que entienda el 'si' y 'no' del frontend
 const parseBoolean = (valor: any) => {
     if (valor === 'null' || valor === null) return null;
     if (valor === undefined) return undefined;
@@ -20,15 +21,14 @@ const parseBoolean = (valor: any) => {
     if (typeof valor === 'number') return valor !== 0;
     if (typeof valor === 'string') {
         const v = valor.trim().toLowerCase();
-        if (['true', '1', 'on'].includes(v)) return true;
-        if (['false', '0', 'off'].includes(v)) return false;
+        if (['true', '1', 'on', 'si', 'sí'].includes(v)) return true;
+        if (['false', '0', 'off', 'no'].includes(v)) return false;
     }
     return false;
 };
 
 const obtenerUrlImagen = (file: Express.Multer.File | undefined) => {
     if (!file) return null;
-    // Normalizamos la ruta para que siempre use '/' y tenga un slash inicial
     const path = file.path.replace(/\\/g, '/');
     return path.startsWith('/') ? path : `/${path}`;
 };
@@ -40,11 +40,9 @@ export const crearPropiedad = async (req: Request, res: Response) => {
         const usuario = (req as any).user;
         const files = req.files as { [fieldname: string]: Express.Multer.File[] };
         
-        // Imágenes
         const fotoPrincipal = obtenerUrlImagen(files['fotoPrincipal']?.[0]);
         let galeria: string[] = files['galeria'] ? files['galeria'].map(f => obtenerUrlImagen(f) as string) : [];
 
-        // Procesamiento de PDFs de Auditoría (file_testimonio, file_hr, etc.)
         const documentosUrls: any = {};
         const posiblesPDFs = ['testimonio', 'hr', 'pu', 'impuestoPredial', 'arbitrios', 'copiaLiteral', 'cri', 'reciboAguaLuz'];
         
@@ -72,14 +70,13 @@ export const crearPropiedad = async (req: Request, res: Response) => {
             fechaCaptacion: limpiarFecha(rawBody.fechaCaptacion),
             inicioContrato: limpiarFecha(rawBody.inicioContrato),
             finContrato: limpiarFecha(rawBody.finContrato),
-            // Guardamos el objeto de documentos en ambos campos por compatibilidad de base de datos
             documentosurls: documentosUrls,
             documentosUrls: documentosUrls,
-            // Las observaciones vienen como JSON string desde el frontend
             observaciones: rawBody.observaciones || ''
         };
 
-        const bools = ['testimonio', 'hr', 'pu', 'impuestoPredial', 'arbitrios', 'copiaLiteral', 'cri', 'reciboAguaLuz', 'revision'];
+        // --- AGREGADOS LOS NUEVOS CAMPOS AL PARSEO BOOLEANO ---
+        const bools = ['testimonio', 'hr', 'pu', 'impuestoPredial', 'arbitrios', 'copiaLiteral', 'cri', 'reciboAguaLuz', 'revision', 'exclusiva', 'renovable'];
         bools.forEach(f => { datosPropiedad[f] = parseBoolean(rawBody[f]); });
 
         if (galeria.length === 0 && typeof resto.galeria === 'string') {
@@ -109,7 +106,6 @@ export const crearPropiedad = async (req: Request, res: Response) => {
             activo: true
         }, { transaction: t });
 
-        // Vincular propietarios
         const ids = rawBody.propietariosIds ?? rawBody['propietariosIds[]'];
         const propietariosIds = Array.isArray(ids) ? ids.filter(Boolean) : (ids ? [String(ids)] : []);
         
@@ -170,7 +166,8 @@ export const updatePropiedad = async (req: Request, res: Response) => {
         ['precio', 'mantenimiento', 'area', 'areaConstruida', 'habitaciones', 'banos', 'cocheras', 'comision']
             .forEach(f => { if (raw[f] !== undefined) updates[f] = limpiarNumero(raw[f]); });
 
-        ['testimonio', 'hr', 'pu', 'impuestoPredial', 'arbitrios', 'copiaLiteral', 'revision']
+        // --- AGREGADOS LOS NUEVOS CAMPOS A LA ACTUALIZACIÓN ---
+        ['testimonio', 'hr', 'pu', 'impuestoPredial', 'arbitrios', 'copiaLiteral', 'revision', 'exclusiva', 'renovable']
             .forEach(f => { if (raw[f] !== undefined) updates[f] = parseBoolean(raw[f]); });
 
         if (raw.cri !== undefined) updates[mapeoEspecial.cri] = parseBoolean(raw.cri);
@@ -222,7 +219,7 @@ export const eliminarPropiedad = async (req: Request, res: Response) => {
     } catch (e) { res.status(500).json({ message: 'Error' }); }
 };
 
-// 7. SUBIR PDF DOCUMENTO (Auditoría desde Detalle)
+// 7. SUBIR PDF DOCUMENTO
 export const subirPdfDocumento = async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
