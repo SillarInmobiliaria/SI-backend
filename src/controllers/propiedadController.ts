@@ -13,7 +13,6 @@ const limpiarFecha = (valor: any) => {
     return valor;
 };
 
-// Modificamos parseBoolean para que entienda el 'si' y 'no' del frontend
 const parseBoolean = (valor: any) => {
     if (valor === 'null' || valor === null) return null;
     if (valor === undefined) return undefined;
@@ -29,11 +28,7 @@ const parseBoolean = (valor: any) => {
 
 const obtenerUrlImagen = (file: Express.Multer.File | undefined) => {
     if (!file) return null;
-    
-    if (file.path.startsWith('http')) {
-        return file.path;
-    }
-    
+    if (file.path.startsWith('http')) return file.path;
     const path = file.path.replace(/\\/g, '/');
     return path.startsWith('/') ? path : `/${path}`;
 };
@@ -167,46 +162,32 @@ export const getPropiedad = async (req: Request, res: Response) => {
 
 // 4. ACTUALIZAR PROPIEDAD
 export const updatePropiedad = async (req: Request, res: Response) => {
+    const t = await Propiedad.sequelize!.transaction();
     try {
         const { id } = req.params;
         const propiedad = await Propiedad.findByPk(id);
-        if (!propiedad) return res.status(404).json({ message: 'No encontrada' });
+        if (!propiedad) {
+            await t.rollback();
+            return res.status(404).json({ message: 'No encontrada' });
+        }
 
         const raw = req.body;
+        const files = (req.files as { [fieldname: string]: Express.Multer.File[] }) || {};
         const updates: any = {};
-
-        const mapeoEspecial: any = {
-            cri: 'cri',
-            reciboAguaLuz: 'reciboagualuz',
-            documentosUrls: 'documentosurls'
-        };
 
         ['precio', 'mantenimiento', 'area', 'areaConstruida', 'habitaciones', 'banos', 'cocheras', 'comision']
             .forEach(f => { if (raw[f] !== undefined) updates[f] = limpiarNumero(raw[f]); });
 
-        [
-            'testimonio', 'hr', 'pu', 'impuestoPredial', 'arbitrios', 'copiaLiteral', 'revision', 
-            'exclusiva', 'renovable',
-            'planos', 'certificadoParametros', 'certificadoZonificacion', 'otros'
-        ].forEach(f => { if (raw[f] !== undefined) updates[f] = parseBoolean(raw[f]); });
-
-        if (raw.cri !== undefined) updates[mapeoEspecial.cri] = parseBoolean(raw.cri);
-        if (raw.reciboAguaLuz !== undefined) updates[mapeoEspecial.reciboAguaLuz] = parseBoolean(raw.reciboAguaLuz);
+        ['exclusiva', 'renovable'].forEach(f => { if (raw[f] !== undefined) updates[f] = parseBoolean(raw[f]); });
 
         ['fechaCaptacion', 'inicioContrato', 'finContrato']
             .forEach(f => { if (raw[f] !== undefined) updates[f] = limpiarFecha(raw[f]); });
 
         ['tipo', 'modalidad', 'ubicacion', 'direccion', 'moneda', 'descripcion', 
-         'detalles', 'videoUrl', 'mapaUrl', 'pdfUrl', 'tipoContrato', 'asesor',
-         'partidaRegistral', 'partidaAdicional', 'partidaCochera', 'partidaDeposito',
-         'link1', 'link2', 'link3', 'link4', 'link5', 'observaciones'].forEach(f => { 
+         'detalles', 'videoUrl', 'mapaUrl', 'asesor', 'partidaRegistral', 'partidaCochera', 
+         'partidaDeposito', 'link1', 'link2', 'link3', 'link4', 'link5'].forEach(f => { 
              if (raw[f] !== undefined) updates[f] = raw[f]; 
          });
-
-        if (raw.documentosUrls !== undefined) {
-            updates[mapeoEspecial.documentosUrls] = typeof raw.documentosUrls === 'string' 
-                ? JSON.parse(raw.documentosUrls) : raw.documentosUrls;
-        }
 
         const tipoFinal = updates.tipo || propiedad.getDataValue('tipo');
         if (tipoFinal && String(tipoFinal).toLowerCase().includes('terreno')) {
@@ -215,12 +196,45 @@ export const updatePropiedad = async (req: Request, res: Response) => {
             updates.cocheras = null;
         }
 
-        await propiedad.update(updates);
+        // --- ACTUALIZAR FOTOS ---
+        if (files['fotoPrincipal']) {
+            updates.fotoPrincipal = obtenerUrlImagen(files['fotoPrincipal'][0]);
+        } else if (raw.existingMainPhoto) {
+            updates.fotoPrincipal = raw.existingMainPhoto;
+        } else if (raw.existingMainPhoto === '') {
+            updates.fotoPrincipal = null;
+        }
+
+        let galeriaFinal: string[] = [];
+        if (raw.existingGallery) {
+            try { galeriaFinal = JSON.parse(raw.existingGallery); } catch (e) {}
+        }
+        if (files['galeria']) {
+            const nuevasFotos = files['galeria'].map(f => obtenerUrlImagen(f) as string);
+            galeriaFinal = [...galeriaFinal, ...nuevasFotos];
+        }
+        if (raw.existingGallery || files['galeria']) {
+            updates.galeria = galeriaFinal;
+        }
+
+        // GUARDAR DATOS DE LA PROPIEDAD
+        await propiedad.update(updates, { transaction: t });
+
+        // ACTUALIZAR PROPIETARIOS
+        const ids = raw.propietariosIds ?? raw['propietariosIds[]'];
+        const propietariosIds = Array.isArray(ids) ? ids.filter(Boolean) : (ids ? [String(ids)] : []);
+        
+        if (propietariosIds.length > 0) {
+            await (propiedad as any).setPropietarios(propietariosIds, { transaction: t });
+        }
+
+        await t.commit();
         
         const actualizada = await Propiedad.findByPk(id, { include: [{ model: Propietario }] });
         res.json({ message: 'Actualizada correctamente', propiedad: actualizada });
 
     } catch (e: any) {
+        if (t) await t.rollback();
         console.error("❌ ERROR EN UPDATE:", e);
         res.status(500).json({ message: 'Error de base de datos', error: e.message });
     }

@@ -29,7 +29,8 @@ const uploadFields = upload.fields([
 router.post('/', authMiddleware, uploadFields, crearPropiedad);
 router.get('/', obtenerPropiedades);
 router.get('/:id', getPropiedad);
-router.put('/:id', authMiddleware, updatePropiedad);
+
+router.put('/:id', authMiddleware, uploadFields, updatePropiedad);
 
 router.post('/:id/upload-pdf', authMiddleware, upload.single('file'), subirPdfDocumento);
 
