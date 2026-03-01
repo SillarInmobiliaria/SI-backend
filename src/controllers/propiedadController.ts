@@ -84,6 +84,12 @@ export const crearPropiedad = async (req: Request, res: Response) => {
             observaciones: rawBody.observaciones || ''
         };
 
+        if (datosPropiedad.tipo && String(datosPropiedad.tipo).toLowerCase().includes('terreno')) {
+            datosPropiedad.habitaciones = null;
+            datosPropiedad.banos = null;
+            datosPropiedad.cocheras = null;
+        }
+
         const bools = [
             'testimonio', 'hr', 'pu', 'impuestoPredial', 'arbitrios', 'copiaLiteral', 'cri', 'reciboAguaLuz', 'revision', 
             'exclusiva', 'renovable',
@@ -200,6 +206,13 @@ export const updatePropiedad = async (req: Request, res: Response) => {
         if (raw.documentosUrls !== undefined) {
             updates[mapeoEspecial.documentosUrls] = typeof raw.documentosUrls === 'string' 
                 ? JSON.parse(raw.documentosUrls) : raw.documentosUrls;
+        }
+
+        const tipoFinal = updates.tipo || propiedad.getDataValue('tipo');
+        if (tipoFinal && String(tipoFinal).toLowerCase().includes('terreno')) {
+            updates.habitaciones = null;
+            updates.banos = null;
+            updates.cocheras = null;
         }
 
         await propiedad.update(updates);
