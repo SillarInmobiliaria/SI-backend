@@ -55,6 +55,12 @@ Propiedad.init(
     copiaLiteral: { type: DataTypes.BOOLEAN, defaultValue: false, allowNull: true },
     cri: { type: DataTypes.BOOLEAN, defaultValue: false, allowNull: true },
     reciboAguaLuz: { type: DataTypes.BOOLEAN, defaultValue: false, allowNull: true },
+    
+    planos: { type: DataTypes.BOOLEAN, defaultValue: false, allowNull: true },
+    certificadoParametros: { type: DataTypes.BOOLEAN, defaultValue: false, allowNull: true },
+    certificadoZonificacion: { type: DataTypes.BOOLEAN, defaultValue: false, allowNull: true },
+    otros: { type: DataTypes.BOOLEAN, defaultValue: false, allowNull: true },
+  
     revision: { type: DataTypes.BOOLEAN, defaultValue: false },
     asesor: { type: DataTypes.STRING, allowNull: true },
     usuarioId: { type: DataTypes.UUID, allowNull: true },

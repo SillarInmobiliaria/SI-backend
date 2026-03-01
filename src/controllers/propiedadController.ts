@@ -50,7 +50,10 @@ export const crearPropiedad = async (req: Request, res: Response) => {
         let galeria: string[] = files['galeria'] ? files['galeria'].map(f => obtenerUrlImagen(f) as string) : [];
 
         const documentosUrls: any = {};
-        const posiblesPDFs = ['testimonio', 'hr', 'pu', 'impuestoPredial', 'arbitrios', 'copiaLiteral', 'cri', 'reciboAguaLuz'];
+        const posiblesPDFs = [
+            'testimonio', 'hr', 'pu', 'impuestoPredial', 'arbitrios', 'copiaLiteral', 'cri', 'reciboAguaLuz',
+            'planos', 'certificadoParametros', 'certificadoZonificacion', 'otros'
+        ];
         
         posiblesPDFs.forEach(doc => {
             const fileKey = `file_${doc}`;
@@ -81,7 +84,11 @@ export const crearPropiedad = async (req: Request, res: Response) => {
             observaciones: rawBody.observaciones || ''
         };
 
-        const bools = ['testimonio', 'hr', 'pu', 'impuestoPredial', 'arbitrios', 'copiaLiteral', 'cri', 'reciboAguaLuz', 'revision', 'exclusiva', 'renovable'];
+        const bools = [
+            'testimonio', 'hr', 'pu', 'impuestoPredial', 'arbitrios', 'copiaLiteral', 'cri', 'reciboAguaLuz', 'revision', 
+            'exclusiva', 'renovable',
+            'planos', 'certificadoParametros', 'certificadoZonificacion', 'otros'
+        ];
         bools.forEach(f => { datosPropiedad[f] = parseBoolean(rawBody[f]); });
 
         if (galeria.length === 0 && typeof resto.galeria === 'string') {
@@ -171,8 +178,11 @@ export const updatePropiedad = async (req: Request, res: Response) => {
         ['precio', 'mantenimiento', 'area', 'areaConstruida', 'habitaciones', 'banos', 'cocheras', 'comision']
             .forEach(f => { if (raw[f] !== undefined) updates[f] = limpiarNumero(raw[f]); });
 
-        ['testimonio', 'hr', 'pu', 'impuestoPredial', 'arbitrios', 'copiaLiteral', 'revision', 'exclusiva', 'renovable']
-            .forEach(f => { if (raw[f] !== undefined) updates[f] = parseBoolean(raw[f]); });
+        [
+            'testimonio', 'hr', 'pu', 'impuestoPredial', 'arbitrios', 'copiaLiteral', 'revision', 
+            'exclusiva', 'renovable',
+            'planos', 'certificadoParametros', 'certificadoZonificacion', 'otros'
+        ].forEach(f => { if (raw[f] !== undefined) updates[f] = parseBoolean(raw[f]); });
 
         if (raw.cri !== undefined) updates[mapeoEspecial.cri] = parseBoolean(raw.cri);
         if (raw.reciboAguaLuz !== undefined) updates[mapeoEspecial.reciboAguaLuz] = parseBoolean(raw.reciboAguaLuz);
