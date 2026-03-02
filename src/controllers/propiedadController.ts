@@ -65,7 +65,6 @@ export const crearPropiedad = async (req: Request, res: Response) => {
             precio: limpiarNumero(rawBody.precio),
             moneda: rawBody.moneda || 'USD',
             
-            // --- NUEVOS PAGOS ---
             mantenimiento: limpiarNumero(rawBody.mantenimiento),
             monedaMantenimiento: rawBody.monedaMantenimiento || 'PEN',
             vigilancia: limpiarNumero(rawBody.vigilancia),
@@ -91,9 +90,10 @@ export const crearPropiedad = async (req: Request, res: Response) => {
             datosPropiedad.cocheras = null;
         }
 
+        // --- incluyeIgv ---
         const bools = [
             'testimonio', 'hr', 'pu', 'impuestoPredial', 'arbitrios', 'copiaLiteral', 'cri', 'reciboAguaLuz', 'revision', 
-            'exclusiva', 'renovable',
+            'exclusiva', 'renovable', 'incluyeIgv',
             'planos', 'certificadoParametros', 'certificadoZonificacion', 'otros'
         ];
         bools.forEach(f => { datosPropiedad[f] = parseBoolean(rawBody[f]); });
@@ -181,16 +181,14 @@ export const updatePropiedad = async (req: Request, res: Response) => {
         const files = (req.files as { [fieldname: string]: Express.Multer.File[] }) || {};
         const updates: any = {};
 
-        // Limpiar los números incluyendo la nueva vigilancia
         ['precio', 'mantenimiento', 'vigilancia', 'area', 'areaConstruida', 'habitaciones', 'banos', 'cocheras', 'comision']
             .forEach(f => { if (raw[f] !== undefined) updates[f] = limpiarNumero(raw[f]); });
 
-        ['exclusiva', 'renovable'].forEach(f => { if (raw[f] !== undefined) updates[f] = parseBoolean(raw[f]); });
+        ['exclusiva', 'renovable', 'incluyeIgv'].forEach(f => { if (raw[f] !== undefined) updates[f] = parseBoolean(raw[f]); });
 
         ['fechaCaptacion', 'inicioContrato', 'finContrato']
             .forEach(f => { if (raw[f] !== undefined) updates[f] = limpiarFecha(raw[f]); });
 
-        // Guardar las nuevas variables de moneda en la actualización
         ['tipo', 'modalidad', 'ubicacion', 'direccion', 'moneda', 'monedaMantenimiento', 'monedaVigilancia', 'descripcion', 
          'detalles', 'videoUrl', 'mapaUrl', 'asesor', 'partidaRegistral', 'partidaCochera', 
          'partidaDeposito', 'link1', 'link2', 'link3', 'link4', 'link5'].forEach(f => { 

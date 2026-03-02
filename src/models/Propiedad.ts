@@ -49,6 +49,8 @@ Propiedad.init(
     tipoContrato: { type: DataTypes.STRING, allowNull: true },
     comision: { type: DataTypes.FLOAT, allowNull: true },
     
+    incluyeIgv: { type: DataTypes.BOOLEAN, defaultValue: false, allowNull: true },
+    
     exclusiva: { type: DataTypes.BOOLEAN, defaultValue: false, allowNull: true },
     renovable: { type: DataTypes.BOOLEAN, defaultValue: false, allowNull: true },
 
