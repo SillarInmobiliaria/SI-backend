@@ -4,7 +4,29 @@ import Cierre from '../models/Cierre';
 // Crear un nuevo cierre
 export const createCierre = async (req: Request, res: Response) => {
     try {
-        const nuevoCierre = await Cierre.create(req.body);
+        const dataToSave = { ...req.body };
+        
+        if (dataToSave.tipoFirmaAlquiler !== undefined) {
+            dataToSave.tipoFirma = dataToSave.tipoFirmaAlquiler;
+        }
+        
+        if (dataToSave.plazo !== undefined) {
+            dataToSave.plazoContrato = dataToSave.plazo;
+        }
+        
+        if (dataToSave.mascotas !== undefined) {
+            dataToSave.permiteMascotas = dataToSave.mascotas;
+        }
+        
+        if (dataToSave.cochera !== undefined) {
+            dataToSave.incluyeCochera = dataToSave.cochera;
+        }
+
+        if (dataToSave.clienteNombre && !dataToSave.clienteId) {
+            dataToSave.clienteId = dataToSave.clienteNombre; 
+        }
+
+        const nuevoCierre = await Cierre.create(dataToSave);
         res.status(201).json(nuevoCierre);
     } catch (error) {
         console.error(error);
