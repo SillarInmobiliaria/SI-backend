@@ -12,7 +12,12 @@ Propiedad.init(
     direccion: { type: DataTypes.STRING, allowNull: true },
     precio: { type: DataTypes.DECIMAL(15, 2), allowNull: false }, 
     moneda: { type: DataTypes.STRING, defaultValue: 'USD' },
+    
     mantenimiento: { type: DataTypes.DECIMAL(12, 2), allowNull: true },
+    monedaMantenimiento: { type: DataTypes.STRING, defaultValue: 'PEN' },
+    vigilancia: { type: DataTypes.DECIMAL(12, 2), allowNull: true },
+    monedaVigilancia: { type: DataTypes.STRING, defaultValue: 'PEN' },
+
     area: { type: DataTypes.DECIMAL(10, 2), allowNull: true },
     areaConstruida: { type: DataTypes.DECIMAL(10, 2), allowNull: true },
     habitaciones: { type: DataTypes.INTEGER, allowNull: true },

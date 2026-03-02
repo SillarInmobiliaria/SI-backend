@@ -64,7 +64,13 @@ export const crearPropiedad = async (req: Request, res: Response) => {
             ...resto,
             precio: limpiarNumero(rawBody.precio),
             moneda: rawBody.moneda || 'USD',
+            
+            // --- NUEVOS PAGOS ---
             mantenimiento: limpiarNumero(rawBody.mantenimiento),
+            monedaMantenimiento: rawBody.monedaMantenimiento || 'PEN',
+            vigilancia: limpiarNumero(rawBody.vigilancia),
+            monedaVigilancia: rawBody.monedaVigilancia || 'PEN',
+
             area: limpiarNumero(rawBody.area),
             areaConstruida: limpiarNumero(rawBody.areaConstruida),
             habitaciones: limpiarNumero(rawBody.habitaciones),
@@ -175,7 +181,8 @@ export const updatePropiedad = async (req: Request, res: Response) => {
         const files = (req.files as { [fieldname: string]: Express.Multer.File[] }) || {};
         const updates: any = {};
 
-        ['precio', 'mantenimiento', 'area', 'areaConstruida', 'habitaciones', 'banos', 'cocheras', 'comision']
+        // Limpiar los números incluyendo la nueva vigilancia
+        ['precio', 'mantenimiento', 'vigilancia', 'area', 'areaConstruida', 'habitaciones', 'banos', 'cocheras', 'comision']
             .forEach(f => { if (raw[f] !== undefined) updates[f] = limpiarNumero(raw[f]); });
 
         ['exclusiva', 'renovable'].forEach(f => { if (raw[f] !== undefined) updates[f] = parseBoolean(raw[f]); });
@@ -183,7 +190,8 @@ export const updatePropiedad = async (req: Request, res: Response) => {
         ['fechaCaptacion', 'inicioContrato', 'finContrato']
             .forEach(f => { if (raw[f] !== undefined) updates[f] = limpiarFecha(raw[f]); });
 
-        ['tipo', 'modalidad', 'ubicacion', 'direccion', 'moneda', 'descripcion', 
+        // Guardar las nuevas variables de moneda en la actualización
+        ['tipo', 'modalidad', 'ubicacion', 'direccion', 'moneda', 'monedaMantenimiento', 'monedaVigilancia', 'descripcion', 
          'detalles', 'videoUrl', 'mapaUrl', 'asesor', 'partidaRegistral', 'partidaCochera', 
          'partidaDeposito', 'link1', 'link2', 'link3', 'link4', 'link5'].forEach(f => { 
              if (raw[f] !== undefined) updates[f] = raw[f]; 
@@ -217,10 +225,8 @@ export const updatePropiedad = async (req: Request, res: Response) => {
             updates.galeria = galeriaFinal;
         }
 
-        // GUARDAR DATOS DE LA PROPIEDAD
         await propiedad.update(updates, { transaction: t });
 
-        // ACTUALIZAR PROPIETARIOS
         const ids = raw.propietariosIds ?? raw['propietariosIds[]'];
         const propietariosIds = Array.isArray(ids) ? ids.filter(Boolean) : (ids ? [String(ids)] : []);
         
