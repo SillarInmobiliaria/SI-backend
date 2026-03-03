@@ -1,6 +1,5 @@
 import { Request, Response } from 'express';
 import { Op } from 'sequelize';
-
 import Cartera from '../models/Cartera'; 
 import Cliente from '../models/Cliente'; 
 
@@ -20,7 +19,6 @@ export const buscarParaAutocompletar = async (req: Request, res: Response) => {
         });
         
         res.json(encontrados);
-
     } catch (error) {
         console.error("Error en el buscador:", error);
         res.status(500).json({ msg: 'Error al buscar en la base de datos' });

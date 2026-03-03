@@ -3,6 +3,9 @@ import db from '../config/db';
 
 class Cartera extends Model {
     public id!: number;
+    public tipoPersona!: 'PN' | 'PJ';
+    public empresa!: string;
+    public ruc!: string;
     public nombreCompleto!: string;
     public documento!: string;
     public telefono!: string;
@@ -18,6 +21,13 @@ class Cartera extends Model {
 
 Cartera.init({
     id: { type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true },
+    tipoPersona: { 
+        type: DataTypes.ENUM('PN', 'PJ'), 
+        defaultValue: 'PN',
+        allowNull: false 
+    },
+    empresa: { type: DataTypes.STRING, allowNull: true },
+    ruc: { type: DataTypes.STRING, allowNull: true },
     nombreCompleto: { type: DataTypes.STRING, allowNull: false },
     documento: { type: DataTypes.STRING, allowNull: true }, 
     telefono: { type: DataTypes.STRING, allowNull: false },
