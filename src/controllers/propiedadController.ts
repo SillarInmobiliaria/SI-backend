@@ -58,27 +58,40 @@ export const crearPropiedad = async (req: Request, res: Response) => {
         });
 
         const rawBody = req.body;
-        const { nombre, dni, celular1, fechaNacimiento, ...resto } = rawBody;
+        const { nombre, dni, celular1, fechaNacimiento, tipologias, ...resto } = rawBody;
+
+        // Lógica de limpieza para Proyectos
+        const esProyecto = rawBody.tipo === 'Proyecto';
 
         let datosPropiedad: any = {
             ...resto,
-            precio: limpiarNumero(rawBody.precio),
+            // Si es proyecto, el precio general es nulo (se usan tipologías) y área total es nula
+            precio: esProyecto ? null : limpiarNumero(rawBody.precio),
             moneda: rawBody.moneda || 'USD',
             
             mantenimiento: limpiarNumero(rawBody.mantenimiento),
             monedaMantenimiento: rawBody.monedaMantenimiento || 'PEN',
-            vigilancia: limpiarNumero(rawBody.vigilancia),
+            // Vigilancia no existe en Proyectos, excepto en Alquiler
+            vigilancia: (esProyecto && rawBody.modalidad !== 'Alquiler') ? null : limpiarNumero(rawBody.vigilancia),
             monedaVigilancia: rawBody.monedaVigilancia || 'PEN',
 
-            area: limpiarNumero(rawBody.area),
+            area: esProyecto ? null : limpiarNumero(rawBody.area),
             areaConstruida: limpiarNumero(rawBody.areaConstruida),
-            habitaciones: limpiarNumero(rawBody.habitaciones),
-            banos: limpiarNumero(rawBody.banos),
-            cocheras: limpiarNumero(rawBody.cocheras),
+            habitaciones: esProyecto ? null : limpiarNumero(rawBody.habitaciones),
+            banos: esProyecto ? null : limpiarNumero(rawBody.banos),
+            cocheras: esProyecto ? null : limpiarNumero(rawBody.cocheras),
+            
             comision: limpiarNumero(rawBody.comision),
             fechaCaptacion: limpiarFecha(rawBody.fechaCaptacion),
             inicioContrato: limpiarFecha(rawBody.inicioContrato),
             finContrato: limpiarFecha(rawBody.finContrato),
+
+            // Campos específicos de Proyecto
+            fechaInicioProyecto: esProyecto ? limpiarFecha(rawBody.fechaInicioProyecto) : null,
+            tiempoEjecucion: esProyecto ? rawBody.tiempoEjecucion : null,
+            constructoraId: esProyecto ? (limpiarNumero(rawBody.constructoraId)) : null,
+            tipologias: esProyecto ? (typeof tipologias === 'string' ? JSON.parse(tipologias) : tipologias) : null,
+
             documentosurls: documentosUrls,
             documentosUrls: documentosUrls,
             observaciones: rawBody.observaciones || ''
@@ -90,7 +103,6 @@ export const crearPropiedad = async (req: Request, res: Response) => {
             datosPropiedad.cocheras = null;
         }
 
-        // --- incluyeIgv ---
         const bools = [
             'testimonio', 'hr', 'pu', 'impuestoPredial', 'arbitrios', 'copiaLiteral', 'cri', 'reciboAguaLuz', 'revision', 
             'exclusiva', 'renovable', 'incluyeIgv',
@@ -181,19 +193,24 @@ export const updatePropiedad = async (req: Request, res: Response) => {
         const files = (req.files as { [fieldname: string]: Express.Multer.File[] }) || {};
         const updates: any = {};
 
-        ['precio', 'mantenimiento', 'vigilancia', 'area', 'areaConstruida', 'habitaciones', 'banos', 'cocheras', 'comision']
+        // Manejo de campos numéricos y nuevos de proyecto
+        ['precio', 'mantenimiento', 'vigilancia', 'area', 'areaConstruida', 'habitaciones', 'banos', 'cocheras', 'comision', 'constructoraId']
             .forEach(f => { if (raw[f] !== undefined) updates[f] = limpiarNumero(raw[f]); });
 
         ['exclusiva', 'renovable', 'incluyeIgv'].forEach(f => { if (raw[f] !== undefined) updates[f] = parseBoolean(raw[f]); });
 
-        ['fechaCaptacion', 'inicioContrato', 'finContrato']
+        ['fechaCaptacion', 'inicioContrato', 'finContrato', 'fechaInicioProyecto']
             .forEach(f => { if (raw[f] !== undefined) updates[f] = limpiarFecha(raw[f]); });
 
         ['tipo', 'modalidad', 'ubicacion', 'direccion', 'moneda', 'monedaMantenimiento', 'monedaVigilancia', 'descripcion', 
          'detalles', 'videoUrl', 'mapaUrl', 'asesor', 'partidaRegistral', 'partidaCochera', 
-         'partidaDeposito', 'link1', 'link2', 'link3', 'link4', 'link5'].forEach(f => { 
+         'partidaDeposito', 'link1', 'link2', 'link3', 'link4', 'link5', 'tiempoEjecucion'].forEach(f => { 
              if (raw[f] !== undefined) updates[f] = raw[f]; 
          });
+
+        if (raw.tipologias) {
+            updates.tipologias = typeof raw.tipologias === 'string' ? JSON.parse(raw.tipologias) : raw.tipologias;
+        }
 
         const tipoFinal = updates.tipo || propiedad.getDataValue('tipo');
         if (tipoFinal && String(tipoFinal).toLowerCase().includes('terreno')) {

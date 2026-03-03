@@ -10,7 +10,7 @@ Propiedad.init(
     modalidad: { type: DataTypes.STRING, allowNull: false },
     ubicacion: { type: DataTypes.STRING, allowNull: false },
     direccion: { type: DataTypes.STRING, allowNull: true },
-    precio: { type: DataTypes.DECIMAL(15, 2), allowNull: false }, 
+    precio: { type: DataTypes.DECIMAL(15, 2), allowNull: true }, // Cambiado a true para Proyectos
     moneda: { type: DataTypes.STRING, defaultValue: 'USD' },
     
     mantenimiento: { type: DataTypes.DECIMAL(12, 2), allowNull: true },
@@ -50,7 +50,6 @@ Propiedad.init(
     comision: { type: DataTypes.FLOAT, allowNull: true },
     
     incluyeIgv: { type: DataTypes.BOOLEAN, defaultValue: false, allowNull: true },
-    
     exclusiva: { type: DataTypes.BOOLEAN, defaultValue: false, allowNull: true },
     renovable: { type: DataTypes.BOOLEAN, defaultValue: false, allowNull: true },
 
@@ -72,7 +71,13 @@ Propiedad.init(
     asesor: { type: DataTypes.STRING, allowNull: true },
     usuarioId: { type: DataTypes.UUID, allowNull: true },
     activo: { type: DataTypes.BOOLEAN, defaultValue: true },
-    observaciones: { type: DataTypes.TEXT, allowNull: true }
+    observaciones: { type: DataTypes.TEXT, allowNull: true },
+
+    // --- NUEVOS CAMPOS DE PROYECTO ---
+    fechaInicioProyecto: { type: DataTypes.DATEONLY, allowNull: true },
+    tiempoEjecucion: { type: DataTypes.STRING, allowNull: true },
+    constructoraId: { type: DataTypes.INTEGER, allowNull: true },
+    tipologias: { type: DataTypes.JSONB, allowNull: true }
   },
   { sequelize: db, modelName: 'Propiedad', tableName: 'propiedades' }
 );
