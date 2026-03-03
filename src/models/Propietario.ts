@@ -71,6 +71,14 @@ Propietario.init(
     activo: {
       type: DataTypes.BOOLEAN,
       defaultValue: true,
+    },
+    ocupacion: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    estadoCivil: {
+      type: DataTypes.STRING,
+      allowNull: true,
     }
   },
   {
