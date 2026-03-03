@@ -49,6 +49,22 @@ export const createClienteCartera = async (req: Request, res: Response) => {
     }
 };
 
+// ACTUALIZAR CLIENTE EN CARTERA
+export const updateClienteCartera = async (req: Request, res: Response) => {
+    try {
+        const { id } = req.params;
+        const cliente = await Cartera.findByPk(id);
+        
+        if (!cliente) return res.status(404).json({ msg: 'Cliente no encontrado' });
+
+        await cliente.update(req.body);
+        res.json({ msg: 'Cliente actualizado correctamente', cliente });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ msg: 'Error al actualizar cliente' });
+    }
+};
+
 // ELIMINAR DE CARTERA
 export const deleteClienteCartera = async (req: Request, res: Response) => {
     try {
