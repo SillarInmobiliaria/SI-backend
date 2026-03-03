@@ -53,33 +53,29 @@ export const crearPropiedad = async (req: Request, res: Response) => {
         posiblesPDFs.forEach(doc => {
             const fileKey = `file_${doc}`;
             if (files[fileKey]) {
-                documentosUrls[doc] = obtenerUrlImagen(files[fileKey][0]);
+                // MODIFICACIÓN: GUARDAR UN ARRAY CON TODAS LAS URLs DE ESA CATEGORÍA
+                documentosUrls[doc] = files[fileKey].map((file: any) => obtenerUrlImagen(file));
             }
         });
 
         const rawBody = req.body;
         const { nombre, dni, celular1, fechaNacimiento, tipologias, ...resto } = rawBody;
 
-        // FILTRO DE PROYECTO
         const esProyecto = rawBody.tipo === 'Proyecto';
 
         let datosPropiedad: any = {
             ...resto,
-            // Si es proyecto, el precio y área total se omiten (van en tipologías)
             precio: esProyecto ? null : limpiarNumero(rawBody.precio),
             moneda: rawBody.moneda || 'USD',
             
             mantenimiento: limpiarNumero(rawBody.mantenimiento),
             monedaMantenimiento: rawBody.monedaMantenimiento || 'PEN',
             
-            // Vigilancia: NO VA en Proyecto Venta, SÍ VA en Proyecto Alquiler y demás inmuebles
             vigilancia: (esProyecto && rawBody.modalidad !== 'Alquiler') ? null : limpiarNumero(rawBody.vigilancia),
             monedaVigilancia: rawBody.monedaVigilancia || 'PEN',
 
             area: esProyecto ? null : limpiarNumero(rawBody.area),
             areaConstruida: limpiarNumero(rawBody.areaConstruida),
-            
-            // Dormitorios/Baños/Cocheras: Se permiten en Proyectos y casas/depas, se limpian en Terrenos
             habitaciones: limpiarNumero(rawBody.habitaciones),
             banos: limpiarNumero(rawBody.banos),
             cocheras: limpiarNumero(rawBody.cocheras),
@@ -89,7 +85,6 @@ export const crearPropiedad = async (req: Request, res: Response) => {
             inicioContrato: limpiarFecha(rawBody.inicioContrato),
             finContrato: limpiarFecha(rawBody.finContrato),
 
-            // DATOS NUEVOS PROYECTO
             fechaInicioProyecto: limpiarFecha(rawBody.fechaInicioProyecto),
             tiempoEjecucion: rawBody.tiempoEjecucion || null,
             constructoraId: rawBody.constructoraId ? Number(rawBody.constructoraId) : null,
@@ -196,7 +191,6 @@ export const updatePropiedad = async (req: Request, res: Response) => {
         const files = (req.files as { [fieldname: string]: Express.Multer.File[] }) || {};
         const updates: any = {};
 
-        // Manejo de campos numéricos y campos nuevos
         ['precio', 'mantenimiento', 'vigilancia', 'area', 'areaConstruida', 'habitaciones', 'banos', 'cocheras', 'comision', 'constructoraId']
             .forEach(f => { if (raw[f] !== undefined) updates[f] = limpiarNumero(raw[f]); });
 
@@ -281,33 +275,43 @@ export const eliminarPropiedad = async (req: Request, res: Response) => {
     } catch (e) { res.status(500).json({ message: 'Error' }); }
 };
 
-// 7. SUBIR PDF DOCUMENTO
+// 7. SUBIR PDF DOCUMENTO MÚLTIPLE
 export const subirPdfDocumento = async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
         const { documentKey } = req.body; 
-        const file = req.file;
-        if (!file) return res.status(400).json({ message: 'No se recibió archivo' });
+        
+        // MODIFICADO: req.files en lugar de req.file para soportar multiples
+        const files = req.files as Express.Multer.File[];
+        if (!files || files.length === 0) return res.status(400).json({ message: 'No se recibieron archivos' });
 
         const propiedad = await Propiedad.findByPk(id);
         if (!propiedad) return res.status(404).json({ message: 'No encontrada' });
 
-        const fileUrl = obtenerUrlImagen(file);
+        // Convertimos todos los archivos a URLs
+        const fileUrls = files.map(f => obtenerUrlImagen(f));
         
         let actuales = (propiedad as any).documentosurls || (propiedad as any).documentosUrls || {};
         if (typeof actuales === 'string') {
             try { actuales = JSON.parse(actuales); } catch (e) { actuales = {}; }
         }
 
-        const nuevosDocumentos = { ...actuales, [documentKey]: fileUrl };
+        // Si ya había documentos (y era un string), lo convertimos en array. Si no, arranca como array.
+        let docsExistentes = actuales[documentKey] || [];
+        if (!Array.isArray(docsExistentes)) {
+            docsExistentes = [docsExistentes];
+        }
+
+        // Acumulamos los existentes con los nuevos
+        const nuevosDocumentos = { ...actuales, [documentKey]: [...docsExistentes, ...fileUrls] };
         
         await propiedad.update({ 
             documentosurls: nuevosDocumentos,
             documentosUrls: nuevosDocumentos 
         });
 
-        res.json({ message: 'PDF adjuntado con éxito', url: fileUrl, documentosUrls: nuevosDocumentos });
+        res.json({ message: 'PDFs adjuntados con éxito', urls: nuevosDocumentos[documentKey], documentosUrls: nuevosDocumentos });
     } catch (e: any) {
-        res.status(500).json({ message: 'Error en el servidor al subir PDF', error: e.message });
+        res.status(500).json({ message: 'Error en el servidor al subir PDFs', error: e.message });
     }
 };
