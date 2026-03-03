@@ -14,6 +14,7 @@ class Cartera extends Model {
     public direccion!: string;
     public fechaNacimiento!: string;
     public profesion!: string;
+    public partidaRegistral!: string;
     public fechaRegistro!: string;
     public tipo!: string;
     public estado!: string;
@@ -36,6 +37,7 @@ Cartera.init({
     direccion: { type: DataTypes.STRING, allowNull: true },
     fechaNacimiento: { type: DataTypes.DATEONLY, allowNull: true },
     profesion: { type: DataTypes.STRING, allowNull: true },
+    partidaRegistral: { type: DataTypes.STRING, allowNull: true },
     fechaRegistro: { type: DataTypes.DATEONLY, defaultValue: DataTypes.NOW },
     tipo: { type: DataTypes.ENUM('INQUILINO', 'COMPRADOR'), defaultValue: 'INQUILINO' },
     estado: { type: DataTypes.ENUM('ACTIVO', 'FINALIZADO'), defaultValue: 'ACTIVO' }
