@@ -201,7 +201,7 @@ export const updatePropiedad = async (req: Request, res: Response) => {
 
         ['tipo', 'modalidad', 'ubicacion', 'direccion', 'moneda', 'monedaMantenimiento', 'monedaVigilancia', 'descripcion', 
          'detalles', 'videoUrl', 'mapaUrl', 'asesor', 'partidaRegistral', 'partidaCochera', 
-         'partidaDeposito', 'link1', 'link2', 'link3', 'link4', 'link5', 'tiempoEjecucion'].forEach(f => { 
+         'partidaDeposito', 'link1', 'link2', 'link3', 'link4', 'link5', 'tiempoEjecucion', 'documentosUrls', 'documentosurls'].forEach(f => { 
              if (raw[f] !== undefined) updates[f] = raw[f]; 
          });
 
