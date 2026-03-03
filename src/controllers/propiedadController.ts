@@ -60,37 +60,40 @@ export const crearPropiedad = async (req: Request, res: Response) => {
         const rawBody = req.body;
         const { nombre, dni, celular1, fechaNacimiento, tipologias, ...resto } = rawBody;
 
-        // Lógica de limpieza para Proyectos
+        // FILTRO DE PROYECTO
         const esProyecto = rawBody.tipo === 'Proyecto';
 
         let datosPropiedad: any = {
             ...resto,
-            // Si es proyecto, el precio general es nulo (se usan tipologías) y área total es nula
+            // Si es proyecto, el precio y área total se omiten (van en tipologías)
             precio: esProyecto ? null : limpiarNumero(rawBody.precio),
             moneda: rawBody.moneda || 'USD',
             
             mantenimiento: limpiarNumero(rawBody.mantenimiento),
             monedaMantenimiento: rawBody.monedaMantenimiento || 'PEN',
-            // Vigilancia no existe en Proyectos, excepto en Alquiler
+            
+            // Vigilancia: NO VA en Proyecto Venta, SÍ VA en Proyecto Alquiler y demás inmuebles
             vigilancia: (esProyecto && rawBody.modalidad !== 'Alquiler') ? null : limpiarNumero(rawBody.vigilancia),
             monedaVigilancia: rawBody.monedaVigilancia || 'PEN',
 
             area: esProyecto ? null : limpiarNumero(rawBody.area),
             areaConstruida: limpiarNumero(rawBody.areaConstruida),
-            habitaciones: esProyecto ? null : limpiarNumero(rawBody.habitaciones),
-            banos: esProyecto ? null : limpiarNumero(rawBody.banos),
-            cocheras: esProyecto ? null : limpiarNumero(rawBody.cocheras),
+            
+            // Dormitorios/Baños/Cocheras: Se permiten en Proyectos y casas/depas, se limpian en Terrenos
+            habitaciones: limpiarNumero(rawBody.habitaciones),
+            banos: limpiarNumero(rawBody.banos),
+            cocheras: limpiarNumero(rawBody.cocheras),
             
             comision: limpiarNumero(rawBody.comision),
             fechaCaptacion: limpiarFecha(rawBody.fechaCaptacion),
             inicioContrato: limpiarFecha(rawBody.inicioContrato),
             finContrato: limpiarFecha(rawBody.finContrato),
 
-            // Campos específicos de Proyecto
-            fechaInicioProyecto: esProyecto ? limpiarFecha(rawBody.fechaInicioProyecto) : null,
-            tiempoEjecucion: esProyecto ? rawBody.tiempoEjecucion : null,
-            constructoraId: esProyecto ? (limpiarNumero(rawBody.constructoraId)) : null,
-            tipologias: esProyecto ? (typeof tipologias === 'string' ? JSON.parse(tipologias) : tipologias) : null,
+            // DATOS NUEVOS PROYECTO
+            fechaInicioProyecto: limpiarFecha(rawBody.fechaInicioProyecto),
+            tiempoEjecucion: rawBody.tiempoEjecucion || null,
+            constructoraId: rawBody.constructoraId ? Number(rawBody.constructoraId) : null,
+            tipologias: tipologias ? (typeof tipologias === 'string' ? JSON.parse(tipologias) : tipologias) : null,
 
             documentosurls: documentosUrls,
             documentosUrls: documentosUrls,
@@ -193,7 +196,7 @@ export const updatePropiedad = async (req: Request, res: Response) => {
         const files = (req.files as { [fieldname: string]: Express.Multer.File[] }) || {};
         const updates: any = {};
 
-        // Manejo de campos numéricos y nuevos de proyecto
+        // Manejo de campos numéricos y campos nuevos
         ['precio', 'mantenimiento', 'vigilancia', 'area', 'areaConstruida', 'habitaciones', 'banos', 'cocheras', 'comision', 'constructoraId']
             .forEach(f => { if (raw[f] !== undefined) updates[f] = limpiarNumero(raw[f]); });
 
@@ -219,13 +222,10 @@ export const updatePropiedad = async (req: Request, res: Response) => {
             updates.cocheras = null;
         }
 
-        // --- ACTUALIZAR FOTOS ---
         if (files['fotoPrincipal']) {
             updates.fotoPrincipal = obtenerUrlImagen(files['fotoPrincipal'][0]);
         } else if (raw.existingMainPhoto) {
             updates.fotoPrincipal = raw.existingMainPhoto;
-        } else if (raw.existingMainPhoto === '') {
-            updates.fotoPrincipal = null;
         }
 
         let galeriaFinal: string[] = [];
