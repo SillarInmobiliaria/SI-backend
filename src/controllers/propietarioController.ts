@@ -8,8 +8,14 @@ export const crearPropietario = async (req: Request, res: Response) => {
     
     console.log("Intentando crear propietario con datos:", req.body);
 
+    const datos = { ...req.body };
+    if (datos.tipoPersona === 'PN') {
+        datos.empresa = null;
+        datos.ruc = null;
+    }
+
     const nuevoPropietario = await Propietario.create({
-      ...req.body,
+      ...datos,
       usuarioId: usuario.id,
       activo: true
     });
@@ -82,10 +88,14 @@ export const updatePropietario = async (req: Request, res: Response) => {
             return res.status(404).json({ message: 'Propietario no encontrado' });
         }
 
-        // Si mandaron fecha vacía, la volvemos null para que no falle la BD
         const datosAActualizar = { ...req.body };
         if (datosAActualizar.fechaNacimiento === '') {
             datosAActualizar.fechaNacimiento = null;
+        }
+
+        if (datosAActualizar.tipoPersona === 'PN') {
+            datosAActualizar.empresa = null;
+            datosAActualizar.ruc = null;
         }
 
         await propietario.update(datosAActualizar);

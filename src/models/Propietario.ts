@@ -10,6 +10,19 @@ Propietario.init(
       defaultValue: DataTypes.UUIDV4,
       primaryKey: true,
     },
+    tipoPersona: {
+      type: DataTypes.ENUM('PN', 'PJ'),
+      defaultValue: 'PN',
+      allowNull: false,
+    },
+    empresa: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    ruc: {
+      type: DataTypes.STRING(11),
+      allowNull: true,
+    },
     nombre: {
       type: DataTypes.STRING,
       allowNull: false,
