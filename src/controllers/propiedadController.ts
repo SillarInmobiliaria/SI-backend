@@ -60,7 +60,7 @@ export const crearPropiedad = async (req: Request, res: Response) => {
         const rawBody = req.body;
         const { nombre, dni, celular1, fechaNacimiento, tipologias, ...resto } = rawBody;
 
-        const esProyecto = rawBody.tipo === 'Proyecto';
+        const esProyecto = rawBody.tipo && String(rawBody.tipo).toLowerCase().includes('proyecto');
 
         let datosPropiedad: any = {
             ...resto,
@@ -190,7 +190,6 @@ export const updatePropiedad = async (req: Request, res: Response) => {
         const files = (req.files as { [fieldname: string]: Express.Multer.File[] }) || {};
         const updates: any = {};
 
-        // AQUÍ ELIMINÉ constructoraId
         ['precio', 'mantenimiento', 'vigilancia', 'area', 'areaConstruida', 'habitaciones', 'banos', 'cocheras', 'comision']
             .forEach(f => { if (raw[f] !== undefined) updates[f] = limpiarNumero(raw[f]); });
 
