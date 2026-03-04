@@ -23,6 +23,14 @@ Propietario.init(
       type: DataTypes.STRING(11),
       allowNull: true,
     },
+    rolRepresentante: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    partidaElectronica: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
     nombre: {
       type: DataTypes.STRING,
       allowNull: false,
