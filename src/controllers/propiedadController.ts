@@ -53,7 +53,6 @@ export const crearPropiedad = async (req: Request, res: Response) => {
         posiblesPDFs.forEach(doc => {
             const fileKey = `file_${doc}`;
             if (files[fileKey]) {
-                // MODIFICACIÓN: GUARDAR UN ARRAY CON TODAS LAS URLs DE ESA CATEGORÍA
                 documentosUrls[doc] = files[fileKey].map((file: any) => obtenerUrlImagen(file));
             }
         });
@@ -87,7 +86,7 @@ export const crearPropiedad = async (req: Request, res: Response) => {
 
             fechaInicioProyecto: limpiarFecha(rawBody.fechaInicioProyecto),
             tiempoEjecucion: rawBody.tiempoEjecucion || null,
-            constructoraId: rawBody.constructoraId ? Number(rawBody.constructoraId) : null,
+            fechaEntrega: rawBody.fechaEntrega || null,
             tipologias: tipologias ? (typeof tipologias === 'string' ? JSON.parse(tipologias) : tipologias) : null,
 
             documentosurls: documentosUrls,
@@ -191,7 +190,8 @@ export const updatePropiedad = async (req: Request, res: Response) => {
         const files = (req.files as { [fieldname: string]: Express.Multer.File[] }) || {};
         const updates: any = {};
 
-        ['precio', 'mantenimiento', 'vigilancia', 'area', 'areaConstruida', 'habitaciones', 'banos', 'cocheras', 'comision', 'constructoraId']
+        // AQUÍ ELIMINÉ constructoraId
+        ['precio', 'mantenimiento', 'vigilancia', 'area', 'areaConstruida', 'habitaciones', 'banos', 'cocheras', 'comision']
             .forEach(f => { if (raw[f] !== undefined) updates[f] = limpiarNumero(raw[f]); });
 
         ['exclusiva', 'renovable', 'incluyeIgv'].forEach(f => { if (raw[f] !== undefined) updates[f] = parseBoolean(raw[f]); });
@@ -201,7 +201,7 @@ export const updatePropiedad = async (req: Request, res: Response) => {
 
         ['tipo', 'modalidad', 'ubicacion', 'direccion', 'moneda', 'monedaMantenimiento', 'monedaVigilancia', 'descripcion', 
          'detalles', 'videoUrl', 'mapaUrl', 'asesor', 'partidaRegistral', 'partidaCochera', 
-         'partidaDeposito', 'link1', 'link2', 'link3', 'link4', 'link5', 'tiempoEjecucion', 'documentosUrls', 'documentosurls'].forEach(f => { 
+         'partidaDeposito', 'link1', 'link2', 'link3', 'link4', 'link5', 'tiempoEjecucion', 'fechaEntrega', 'documentosUrls', 'documentosurls'].forEach(f => { 
              if (raw[f] !== undefined) updates[f] = raw[f]; 
          });
 
@@ -281,14 +281,12 @@ export const subirPdfDocumento = async (req: Request, res: Response) => {
         const { id } = req.params;
         const { documentKey } = req.body; 
         
-        // MODIFICADO: req.files en lugar de req.file para soportar multiples
         const files = req.files as Express.Multer.File[];
         if (!files || files.length === 0) return res.status(400).json({ message: 'No se recibieron archivos' });
 
         const propiedad = await Propiedad.findByPk(id);
         if (!propiedad) return res.status(404).json({ message: 'No encontrada' });
 
-        // Convertimos todos los archivos a URLs
         const fileUrls = files.map(f => obtenerUrlImagen(f));
         
         let actuales = (propiedad as any).documentosurls || (propiedad as any).documentosUrls || {};
@@ -296,13 +294,11 @@ export const subirPdfDocumento = async (req: Request, res: Response) => {
             try { actuales = JSON.parse(actuales); } catch (e) { actuales = {}; }
         }
 
-        // Si ya había documentos (y era un string), lo convertimos en array. Si no, arranca como array.
         let docsExistentes = actuales[documentKey] || [];
         if (!Array.isArray(docsExistentes)) {
             docsExistentes = [docsExistentes];
         }
 
-        // Acumulamos los existentes con los nuevos
         const nuevosDocumentos = { ...actuales, [documentKey]: [...docsExistentes, ...fileUrls] };
         
         await propiedad.update({ 

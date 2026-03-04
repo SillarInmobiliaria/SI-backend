@@ -10,7 +10,7 @@ Propiedad.init(
     modalidad: { type: DataTypes.STRING, allowNull: false },
     ubicacion: { type: DataTypes.STRING, allowNull: false },
     direccion: { type: DataTypes.STRING, allowNull: true },
-    precio: { type: DataTypes.DECIMAL(15, 2), allowNull: true }, // Cambiado a true para Proyectos
+    precio: { type: DataTypes.DECIMAL(15, 2), allowNull: true }, 
     moneda: { type: DataTypes.STRING, defaultValue: 'USD' },
     
     mantenimiento: { type: DataTypes.DECIMAL(12, 2), allowNull: true },
@@ -73,10 +73,9 @@ Propiedad.init(
     activo: { type: DataTypes.BOOLEAN, defaultValue: true },
     observaciones: { type: DataTypes.TEXT, allowNull: true },
 
-    // --- NUEVOS CAMPOS DE PROYECTO ---
     fechaInicioProyecto: { type: DataTypes.DATEONLY, allowNull: true },
     tiempoEjecucion: { type: DataTypes.STRING, allowNull: true },
-    constructoraId: { type: DataTypes.INTEGER, allowNull: true },
+    fechaEntrega: { type: DataTypes.STRING, allowNull: true },
     tipologias: { type: DataTypes.JSONB, allowNull: true }
   },
   { sequelize: db, modelName: 'Propiedad', tableName: 'propiedades' }
