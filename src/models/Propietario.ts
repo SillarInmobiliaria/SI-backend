@@ -85,6 +85,10 @@ Propietario.init(
       type: DataTypes.STRING,
       allowNull: true,
     },
+    cuentasBancarias: {
+      type: DataTypes.JSONB,
+      allowNull: true,
+    },
     usuarioId: {
       type: DataTypes.UUID,
       allowNull: true,
