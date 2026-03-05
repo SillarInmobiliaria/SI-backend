@@ -23,11 +23,8 @@ export const crearCliente = async (req: Request, res: Response) => {
         detalles
     } = req.body;
 
-    // Lógica automática de TIPO
-    let tipoCalculado = tipo;
-    if (!tipo) {
-        tipoCalculado = (dni && email) ? 'CLIENTE' : 'PROSPECTO';
-    }
+    // Lógica automática de TIPO: siempre comienza como PROSPECTO (Interesado)
+    let tipoCalculado = tipo || 'PROSPECTO';
 
     const nuevoCliente = await Cliente.create({
       nombre,

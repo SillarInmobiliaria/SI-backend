@@ -2,7 +2,7 @@ import { DataTypes, Model } from 'sequelize';
 import db from '../config/db';
 
 class Cliente extends Model {
-  public tipo!: 'PROSPECTO' | 'CLIENTE';
+  public tipo!: 'PROSPECTO' | 'REQUERIMIENTO' | 'SEGUIMIENTO' | 'CLIENTE';
 }
 
 Cliente.init(
@@ -12,9 +12,9 @@ Cliente.init(
       defaultValue: DataTypes.UUIDV4,
       primaryKey: true,
     },
-    // Define si es un interesado (Prospecto) o ya formal (Cliente)
+    // Define si es un interesado (Prospecto), con requerimiento, en seguimiento o ya formal (Cliente)
     tipo: {
-      type: DataTypes.ENUM('PROSPECTO', 'CLIENTE'),
+      type: DataTypes.ENUM('PROSPECTO', 'REQUERIMIENTO', 'SEGUIMIENTO', 'CLIENTE'),
       defaultValue: 'PROSPECTO',
       allowNull: false
     },

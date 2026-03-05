@@ -7,6 +7,13 @@ import Propiedad from '../models/Propiedad';
 export const crearSeguimiento = async (req: Request, res: Response) => {
   try {
     const nuevo = await Seguimiento.create(req.body);
+    
+    // Cambiar el tipo del cliente a SEGUIMIENTO
+    const cliente = await Cliente.findByPk(req.body.clienteId);
+    if (cliente) {
+      await cliente.update({ tipo: 'SEGUIMIENTO' });
+    }
+    
     res.status(201).json({ message: 'Seguimiento registrado', data: nuevo });
   } catch (error: any) {
     res.status(500).json({ message: 'Error al registrar', error: error.message });

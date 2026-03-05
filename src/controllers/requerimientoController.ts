@@ -6,6 +6,13 @@ import Cliente from '../models/Cliente';
 export const crearRequerimiento = async (req: Request, res: Response) => {
   try {
     const nuevo = await Requerimiento.create(req.body);
+    
+    // Cambiar el tipo del cliente a REQUERIMIENTO
+    const cliente = await Cliente.findByPk(req.body.clienteId);
+    if (cliente) {
+      await cliente.update({ tipo: 'REQUERIMIENTO' });
+    }
+    
     res.status(201).json({ message: 'Requerimiento creado', data: nuevo });
   } catch (error: any) {
     res.status(500).json({ message: 'Error al crear', error: error.message });
