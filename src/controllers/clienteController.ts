@@ -19,7 +19,8 @@ export const crearCliente = async (req: Request, res: Response) => {
         ocupacion, 
         fechaAlta, 
         tipo, 
-        origen
+        origen,
+        detalles
     } = req.body;
 
     // Lógica automática de TIPO
@@ -41,6 +42,7 @@ export const crearCliente = async (req: Request, res: Response) => {
       fechaAlta: fechaAlta || new Date(),
       tipo: tipoCalculado,
       origen,
+      detalles,
       usuarioId: usuario.id,
       activo: true
     });
@@ -85,7 +87,8 @@ export const actualizarCliente = async (req: Request, res: Response) => {
         dni, 
         email, 
         origen, 
-        fechaAlta 
+        fechaAlta,
+        detalles
     } = req.body;
 
     const cliente = await Cliente.findByPk(id);
@@ -105,7 +108,8 @@ export const actualizarCliente = async (req: Request, res: Response) => {
         email: email || null,
         origen,
         fechaAlta: fechaAlta || (cliente as any).fechaAlta,
-        tipo: tipoCalculado
+        tipo: tipoCalculado,
+        detalles
     });
 
     res.json({ message: 'Cliente actualizado correctamente', cliente });

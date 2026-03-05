@@ -142,6 +142,7 @@ model clientes {
   updatedAt       DateTime           @db.Timestamptz(6)
   tipo            enum_clientes_tipo @default(PROSPECTO)
   origen          String?            @db.VarChar(255)
+  detalles        String?
   intereses       intereses[]
   requerimientos  requerimientos[]
   seguimientos    seguimientos[]

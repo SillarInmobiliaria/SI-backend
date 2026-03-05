@@ -56,7 +56,6 @@ Cliente.init(
       type: DataTypes.STRING,
       allowNull: true,
     },
-    // Origen / Medio de Captación
     origen: { 
       type: DataTypes.STRING, 
       allowNull: true 
@@ -65,6 +64,10 @@ Cliente.init(
     fechaAlta: {
       type: DataTypes.DATEONLY,
       defaultValue: DataTypes.NOW,
+    },
+    detalles: {
+      type: DataTypes.TEXT,
+      allowNull: true,
     },
     usuarioId: {
       type: DataTypes.UUID,
