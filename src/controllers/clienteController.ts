@@ -75,7 +75,47 @@ export const obtenerClientes = async (req: Request, res: Response) => {
   }
 };
 
-// 3. SUSPENDER / ACTIVAR
+// 3. ACTUALIZAR CLIENTE
+export const actualizarCliente = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { 
+        nombre, 
+        telefono1, 
+        dni, 
+        email, 
+        origen, 
+        fechaAlta 
+    } = req.body;
+
+    const cliente = await Cliente.findByPk(id);
+
+    if (!cliente) return res.status(404).json({ message: 'Cliente no encontrado' });
+
+    // Determinar el tipo basado en la presencia de DNI y Email si no se envía explícitamente
+    let tipoCalculado = cliente.tipo;
+    if (dni && email) {
+        tipoCalculado = 'CLIENTE';
+    }
+
+    await cliente.update({
+        nombre,
+        telefono1,
+        dni: dni || null,
+        email: email || null,
+        origen,
+        fechaAlta: fechaAlta || (cliente as any).fechaAlta,
+        tipo: tipoCalculado
+    });
+
+    res.json({ message: 'Cliente actualizado correctamente', cliente });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Error al actualizar cliente', error });
+  }
+};
+
+// 4. SUSPENDER / ACTIVAR
 export const toggleEstadoCliente = async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
@@ -91,7 +131,7 @@ export const toggleEstadoCliente = async (req: Request, res: Response) => {
     }
 };
 
-// 4. ELIMINAR
+// 5. ELIMINAR
 export const eliminarCliente = async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
