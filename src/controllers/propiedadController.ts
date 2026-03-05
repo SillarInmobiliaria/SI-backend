@@ -88,6 +88,9 @@ export const crearPropiedad = async (req: Request, res: Response) => {
             tiempoEjecucion: rawBody.tiempoEjecucion || null,
             fechaEntrega: rawBody.fechaEntrega || null,
             tipologias: tipologias ? (typeof tipologias === 'string' ? JSON.parse(tipologias) : tipologias) : null,
+            
+            agenteExterno: rawBody.agenteExterno || null,
+            porcentajeAgenteExterno: limpiarNumero(rawBody.porcentajeAgenteExterno),
 
             documentosurls: documentosUrls,
             documentosUrls: documentosUrls,
@@ -103,7 +106,8 @@ export const crearPropiedad = async (req: Request, res: Response) => {
         const bools = [
             'testimonio', 'hr', 'pu', 'impuestoPredial', 'arbitrios', 'copiaLiteral', 'cri', 'reciboAguaLuz', 'revision', 
             'exclusiva', 'renovable', 'incluyeIgv',
-            'planos', 'certificadoParametros', 'certificadoZonificacion', 'otros'
+            'planos', 'certificadoParametros', 'certificadoZonificacion', 'otros',
+            'propiedadCompartida'
         ];
         bools.forEach(f => { datosPropiedad[f] = parseBoolean(rawBody[f]); });
 
@@ -190,17 +194,17 @@ export const updatePropiedad = async (req: Request, res: Response) => {
         const files = (req.files as { [fieldname: string]: Express.Multer.File[] }) || {};
         const updates: any = {};
 
-        ['precio', 'mantenimiento', 'vigilancia', 'area', 'areaConstruida', 'habitaciones', 'banos', 'cocheras', 'comision']
+        ['precio', 'mantenimiento', 'vigilancia', 'area', 'areaConstruida', 'habitaciones', 'banos', 'cocheras', 'comision', 'porcentajeAgenteExterno']
             .forEach(f => { if (raw[f] !== undefined) updates[f] = limpiarNumero(raw[f]); });
 
-        ['exclusiva', 'renovable', 'incluyeIgv'].forEach(f => { if (raw[f] !== undefined) updates[f] = parseBoolean(raw[f]); });
+        ['exclusiva', 'renovable', 'incluyeIgv', 'propiedadCompartida'].forEach(f => { if (raw[f] !== undefined) updates[f] = parseBoolean(raw[f]); });
 
         ['fechaCaptacion', 'inicioContrato', 'finContrato', 'fechaInicioProyecto']
             .forEach(f => { if (raw[f] !== undefined) updates[f] = limpiarFecha(raw[f]); });
 
         ['tipo', 'modalidad', 'ubicacion', 'direccion', 'moneda', 'monedaMantenimiento', 'monedaVigilancia', 'descripcion', 
          'detalles', 'videoUrl', 'mapaUrl', 'asesor', 'partidaRegistral', 'partidaCochera', 
-         'partidaDeposito', 'link1', 'link2', 'link3', 'link4', 'link5', 'tiempoEjecucion', 'fechaEntrega', 'documentosUrls', 'documentosurls'].forEach(f => { 
+         'partidaDeposito', 'link1', 'link2', 'link3', 'link4', 'link5', 'tiempoEjecucion', 'fechaEntrega', 'documentosUrls', 'documentosurls', 'agenteExterno'].forEach(f => { 
              if (raw[f] !== undefined) updates[f] = raw[f]; 
          });
 

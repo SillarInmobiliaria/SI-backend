@@ -76,7 +76,11 @@ Propiedad.init(
     fechaInicioProyecto: { type: DataTypes.DATEONLY, allowNull: true },
     tiempoEjecucion: { type: DataTypes.STRING, allowNull: true },
     fechaEntrega: { type: DataTypes.STRING, allowNull: true },
-    tipologias: { type: DataTypes.JSONB, allowNull: true }
+    tipologias: { type: DataTypes.JSONB, allowNull: true },
+
+    propiedadCompartida: { type: DataTypes.BOOLEAN, defaultValue: false, allowNull: true },
+    agenteExterno: { type: DataTypes.STRING, allowNull: true },
+    porcentajeAgenteExterno: { type: DataTypes.DECIMAL(5, 2), allowNull: true }
   },
   { sequelize: db, modelName: 'Propiedad', tableName: 'propiedades' }
 );
