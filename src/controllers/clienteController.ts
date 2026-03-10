@@ -6,6 +6,11 @@ export const crearCliente = async (req: Request, res: Response) => {
   try {
     const usuario = (req as any).user;
     
+    // Validar autenticación
+    if (!usuario || !usuario.id) {
+      return res.status(401).json({ message: 'No autorizado: usuario no identificado' });
+    }
+
     // Desestructuramos para tener control total de lo que guardamos
     const { 
         nombre, 
@@ -23,31 +28,36 @@ export const crearCliente = async (req: Request, res: Response) => {
         detalles
     } = req.body;
 
+    // Validar campos requeridos
+    if (!nombre || !telefono1) {
+      return res.status(400).json({ message: 'Nombre y celular son requeridos' });
+    }
+
     // Lógica automática de TIPO: siempre comienza como PROSPECTO (Interesado)
-    let tipoCalculado = tipo || 'PROSPECTO';
+    const tipoCalculado = 'PROSPECTO'; // Siempre PROSPECTO, ignorar tipo del frontend
 
     const nuevoCliente = await Cliente.create({
       nombre,
       telefono1,
       dni: dni || null,
       email: email || null,
-      direccion,
-      fechaNacimiento,
-      telefono2,
-      estadoCivil,
-      ocupacion,
+      direccion: direccion || null,
+      fechaNacimiento: fechaNacimiento || null,
+      telefono2: telefono2 || null,
+      estadoCivil: estadoCivil || null,
+      ocupacion: ocupacion || null,
       fechaAlta: fechaAlta || new Date(),
       tipo: tipoCalculado,
-      origen,
-      detalles,
+      origen: origen || null,
+      detalles: detalles || null,
       usuarioId: usuario.id,
       activo: true
     });
 
     res.status(201).json(nuevoCliente);
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Error al crear cliente', error });
+    console.error('Error en crearCliente:', error);
+    res.status(500).json({ message: 'Error al crear cliente', error: (error as any).message || error });
   }
 };
 

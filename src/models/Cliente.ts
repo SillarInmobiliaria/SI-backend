@@ -26,7 +26,7 @@ Cliente.init(
     dni: {
       type: DataTypes.STRING(20),
       allowNull: true, 
-      unique: true,
+      unique: { name: 'unique_dni_not_null', msg: 'DNI ya existe' },
     },
     fechaNacimiento: {
       type: DataTypes.DATEONLY,
