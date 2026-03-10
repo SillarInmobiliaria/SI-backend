@@ -1,6 +1,11 @@
 import { Request, Response } from 'express';
 import Cliente from '../models/Cliente';
 
+const limpiarCampo = (valor: any) => {
+    if (valor === '' || valor === 'null' || valor === undefined) return null;
+    return valor;
+};
+
 // 1. CREAR CLIENTE
 export const crearCliente = async (req: Request, res: Response) => {
   try {
@@ -11,21 +16,9 @@ export const crearCliente = async (req: Request, res: Response) => {
       return res.status(401).json({ message: 'No autorizado: usuario no identificado' });
     }
 
-    // Desestructuramos para tener control total de lo que guardamos
     const { 
-        nombre, 
-        telefono1, 
-        dni, 
-        email, 
-        direccion, 
-        fechaNacimiento,
-        telefono2, 
-        estadoCivil, 
-        ocupacion, 
-        fechaAlta, 
-        tipo, 
-        origen,
-        detalles
+        nombre, telefono1, dni, email, direccion, fechaNacimiento,
+        telefono2, estadoCivil, ocupacion, fechaAlta, origen, detalles
     } = req.body;
 
     // Validar campos requeridos
@@ -33,31 +26,31 @@ export const crearCliente = async (req: Request, res: Response) => {
       return res.status(400).json({ message: 'Nombre y celular son requeridos' });
     }
 
-    // Lógica automática de TIPO: siempre comienza como PROSPECTO (Interesado)
-    const tipoCalculado = 'PROSPECTO'; // Siempre PROSPECTO, ignorar tipo del frontend
-
     const nuevoCliente = await Cliente.create({
       nombre,
       telefono1,
-      dni: dni || null,
-      email: email || null,
-      direccion: direccion || null,
-      fechaNacimiento: fechaNacimiento || null,
-      telefono2: telefono2 || null,
-      estadoCivil: estadoCivil || null,
-      ocupacion: ocupacion || null,
-      fechaAlta: fechaAlta || new Date(),
-      tipo: tipoCalculado,
-      origen: origen || null,
-      detalles: detalles || null,
+      dni: limpiarCampo(dni),
+      email: limpiarCampo(email),
+      direccion: limpiarCampo(direccion),
+      fechaNacimiento: limpiarCampo(fechaNacimiento),
+      telefono2: limpiarCampo(telefono2),
+      estadoCivil: limpiarCampo(estadoCivil),
+      ocupacion: limpiarCampo(ocupacion),
+      fechaAlta: limpiarCampo(fechaAlta) || new Date(),
+      tipo: 'PROSPECTO',
+      origen: limpiarCampo(origen),
+      detalles: limpiarCampo(detalles),
       usuarioId: usuario.id,
       activo: true
     });
 
     res.status(201).json(nuevoCliente);
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error en crearCliente:', error);
-    res.status(500).json({ message: 'Error al crear cliente', error: (error as any).message || error });
+    if (error.name === 'SequelizeUniqueConstraintError') {
+        return res.status(400).json({ message: 'El DNI o documento ya se encuentra registrado.' });
+    }
+    res.status(500).json({ message: 'Error al crear cliente', error: error.message });
   }
 };
 
@@ -88,37 +81,29 @@ export const obtenerClientes = async (req: Request, res: Response) => {
 export const actualizarCliente = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const { 
-        nombre, 
-        telefono1, 
-        dni, 
-        email, 
-        origen, 
-        fechaAlta,
-        detalles
-    } = req.body;
+    const { nombre, telefono1, dni, email, origen, fechaAlta, detalles } = req.body;
 
     const cliente = await Cliente.findByPk(id);
 
     if (!cliente) return res.status(404).json({ message: 'Cliente no encontrado' });
 
-    const tipoCalculado = cliente.tipo;
-
     await cliente.update({
         nombre,
         telefono1,
-        dni: dni || null,
-        email: email || null,
-        origen,
-        fechaAlta: fechaAlta || (cliente as any).fechaAlta,
-        tipo: tipoCalculado,
-        detalles
+        dni: limpiarCampo(dni),
+        email: limpiarCampo(email),
+        origen: limpiarCampo(origen),
+        fechaAlta: limpiarCampo(fechaAlta) || (cliente as any).fechaAlta,
+        detalles: limpiarCampo(detalles)
     });
 
     res.json({ message: 'Cliente actualizado correctamente', cliente });
-  } catch (error) {
+  } catch (error: any) {
     console.error(error);
-    res.status(500).json({ message: 'Error al actualizar cliente', error });
+    if (error.name === 'SequelizeUniqueConstraintError') {
+        return res.status(400).json({ message: 'El DNI o documento ya se encuentra registrado.' });
+    }
+    res.status(500).json({ message: 'Error al actualizar cliente', error: error.message });
   }
 };
 
