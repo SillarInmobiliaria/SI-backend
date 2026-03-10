@@ -92,11 +92,7 @@ export const actualizarCliente = async (req: Request, res: Response) => {
 
     if (!cliente) return res.status(404).json({ message: 'Cliente no encontrado' });
 
-    // Determinar el tipo basado en la presencia de DNI y Email si no se envía explícitamente
-    let tipoCalculado = cliente.tipo;
-    if (dni && email) {
-        tipoCalculado = 'CLIENTE';
-    }
+    const tipoCalculado = cliente.tipo;
 
     await cliente.update({
         nombre,
