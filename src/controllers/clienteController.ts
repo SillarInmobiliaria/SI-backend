@@ -6,7 +6,7 @@ const limpiarCampo = (valor: any) => {
     return valor;
 };
 
-// 1. CREAR CLIENTE
+// 1. CREAR CLIENTE (Siempre entra como INTERESADO)
 export const crearCliente = async (req: Request, res: Response) => {
   try {
     const usuario = (req as any).user;
@@ -77,7 +77,7 @@ export const obtenerClientes = async (req: Request, res: Response) => {
   }
 };
 
-// 3. ACTUALIZAR CLIENTE
+// 3. ACTUALIZAR CLIENTE (Mantiene su tipo actual)
 export const actualizarCliente = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
@@ -87,6 +87,7 @@ export const actualizarCliente = async (req: Request, res: Response) => {
 
     if (!cliente) return res.status(404).json({ message: 'Cliente no encontrado' });
 
+    // Actualizamos datos pero NO el campo 'tipo'
     await cliente.update({
         nombre,
         telefono1,
@@ -107,7 +108,24 @@ export const actualizarCliente = async (req: Request, res: Response) => {
   }
 };
 
-// 4. SUSPENDER / ACTIVAR
+// 4. PROMOVER A CLIENTE (Nueva función para cierre de ventas)
+export const promoverACliente = async (req: Request, res: Response) => {
+    try {
+        const { id } = req.params;
+        const cliente = await Cliente.findByPk(id);
+        
+        if (!cliente) return res.status(404).json({ message: 'Interesado no encontrado' });
+
+        // Aquí es donde manualmente lo pasamos al final del embudo
+        await cliente.update({ tipo: 'CLIENTE' });
+        
+        res.json({ message: '¡Felicidades! El interesado ahora es un CLIENTE oficial.', cliente });
+    } catch (error) {
+        res.status(500).json({ message: 'Error al promover cliente' });
+    }
+};
+
+// 5. SUSPENDER / ACTIVAR
 export const toggleEstadoCliente = async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
@@ -123,7 +141,7 @@ export const toggleEstadoCliente = async (req: Request, res: Response) => {
     }
 };
 
-// 5. ELIMINAR
+// 6. ELIMINAR
 export const eliminarCliente = async (req: Request, res: Response) => {
     try {
         const { id } = req.params;

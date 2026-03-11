@@ -12,7 +12,7 @@ Cliente.init(
       defaultValue: DataTypes.UUIDV4,
       primaryKey: true,
     },
-    // Define si es un interesado (Prospecto), con requerimiento, en seguimiento o ya formal (Cliente)
+    
     tipo: {
       type: DataTypes.ENUM('PROSPECTO', 'REQUERIMIENTO', 'SEGUIMIENTO', 'CLIENTE'),
       defaultValue: 'PROSPECTO',

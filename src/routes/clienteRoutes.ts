@@ -4,7 +4,8 @@ import {
     obtenerClientes, 
     actualizarCliente,
     toggleEstadoCliente, 
-    eliminarCliente 
+    eliminarCliente,
+    promoverACliente
 } from '../controllers/clienteController';
 import { authMiddleware } from '../middleware/authMiddleware';
 
@@ -14,6 +15,7 @@ router.post('/', authMiddleware, crearCliente);
 router.get('/', authMiddleware, obtenerClientes);
 
 router.put('/:id', authMiddleware, actualizarCliente);
+router.put('/:id/promover', authMiddleware, promoverACliente);
 
 router.put('/:id/estado', authMiddleware, toggleEstadoCliente);
 router.delete('/:id', authMiddleware, eliminarCliente);
