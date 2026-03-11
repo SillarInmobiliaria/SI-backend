@@ -61,7 +61,7 @@ export const obtenerVisitas = async (req: Request, res: Response) => {
                 { 
                     model: Propiedad, 
                     as: 'propiedad', 
-                    attributes: ['tipo', 'ubicacion', 'precio', 'direccion', 'moneda', 'area', 'tipologias', 'descripcion'] 
+                    attributes: ['id', 'tipo', 'ubicacion', 'precio', 'direccion', 'moneda', 'area', 'tipologias', 'descripcion']
                 },
                 { 
                     model: Usuario, 
