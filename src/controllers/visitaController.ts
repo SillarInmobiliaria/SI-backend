@@ -114,7 +114,7 @@ export const actualizarVisita = async (req: Request, res: Response) => {
                     // De Prospecto a Cliente
                     console.log(`🚀 Actualizando Prospecto ${cliente.getDataValue('nombre')} a CLIENTE...`);
                     await cliente.update({
-                        dni, email, direccion, fechaNacimiento, ocupacion, tipo: 'CLIENTE'
+                        dni, email, direccion, fechaNacimiento, ocupacion
                     });
                 } else {
                     // Si ya es CLIENTE, igual permitimos actualizar datos si enviaron algo nuevo
